@@ -1,0 +1,8 @@
+.DS_Store
+
+api/.gradle/
+api/build/
+api/.env
+
+tools/go/bin/
+tools/go/*.test
