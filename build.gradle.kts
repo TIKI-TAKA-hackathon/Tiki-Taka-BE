@@ -31,20 +31,26 @@ repositories {
 // so the io.spring.dependency-management plugin is not required.
 dependencies {
     implementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.0"))
+    implementation(platform("software.amazon.awssdk:bom:2.46.15"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+    implementation("software.amazon.awssdk:s3")
+    implementation("software.amazon.awssdk:url-connection-client")
 
     // Pinned to match the Kotlin plugin version so stdlib and reflect stay aligned.
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.20")
 
     runtimeOnly("org.postgresql:postgresql")
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.testcontainers:junit-jupiter:1.21.4")
+    testImplementation("org.testcontainers:postgresql:1.21.4")
 }
 
 kotlin {
