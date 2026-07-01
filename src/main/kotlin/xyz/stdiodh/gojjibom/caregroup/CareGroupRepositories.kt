@@ -8,6 +8,8 @@ interface UserRepository : JpaRepository<UserEntity, Long> {
 
 interface CareGroupRepository : JpaRepository<CareGroupEntity, Long> {
     fun existsBySeniorId(seniorId: Long): Boolean
+
+    fun findBySeniorId(seniorId: Long): CareGroupEntity?
 }
 
 interface CareGroupMemberRepository : JpaRepository<CareGroupMemberEntity, Long> {
@@ -15,6 +17,12 @@ interface CareGroupMemberRepository : JpaRepository<CareGroupMemberEntity, Long>
         careGroupId: Long,
         userId: Long,
         role: CareGroupRole,
+        status: MemberStatus,
+    ): Boolean
+
+    fun existsByCareGroupIdAndUserIdAndStatus(
+        careGroupId: Long,
+        userId: Long,
         status: MemberStatus,
     ): Boolean
 
