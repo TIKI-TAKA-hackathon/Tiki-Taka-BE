@@ -40,13 +40,21 @@
 - **Phase 3 — 에스컬레이션**: 재알림 래더(1차 +5분/2차 10분/3차 15분) → 보호자 알림 → 전화, 타임라인.
 - **Phase 4 — 재고 & 약국**: 약 개수 추적(남은 개수·예상 소진일·재처방 D-day), 약국 처방 등록 플로우,
   약 사진, 음성 확인.
-- **Phase 5 — 하드닝**: 권한/인가 강화, 관측성(로그·메트릭), 성능(N+1/페이지네이션), 테스트 확대.
+- **Phase 5 — 미디어 (TTS · 이미지)**: 복약 안내 음성(프리렌더 MP3) + 카메라 이미지 저장.
+  - **TTS**: 템플릿 문장 → 캐시 미스 시 1회 렌더 → 오브젝트 스토리지 저장 → 클라이언트는 URL 재생.
+    엔진은 오픈소스 **Kokoro(Apache-2.0, 한국어 지원)**, 렌더는 요청 경로가 아닌 배치/워커(파이썬)에서.
+    다음날 복약 클립은 기기에 프리페치(오프라인 대비). 스크립트는 복약 정보 안내만(의료 조언·추천 금지).
+  - **이미지**: 카메라 이미지 → **비공개 버킷**(AWS S3 또는 자체 호스팅 MinIO) + **presigned URL**(업로드/조회,
+    짧은 만료). DB엔 object key + 메타데이터만. 케어그룹 멤버십 인가, SSE 암호화, 용량·타입 검증.
+  - 데이터: `TTS_CLIPS`(문장 해시 캐시), `IMAGES`(폴리모픽 소유) — ERD 참조.
+  - 완료 기준: 어르신 화면에서 안내 음성이 재생되고, "약 사진 보기"가 저장 이미지를 presigned URL로 표시.
+- **Phase 6 — 하드닝**: 권한/인가 강화, 관측성(로그·메트릭), 성능(N+1/페이지네이션), 테스트 확대.
 
 ## 5. 도메인 모델
 
 [docs/ERD.md](ERD.md) 참조. Phase 1은 `USERS, CARE_GROUPS, CARE_GROUP_MEMBERS, INVITE_LINKS,
 PHARMACIES, PRESCRIPTIONS, MEDICATIONS, DOSE_SCHEDULES, DOSE_SCHEDULE_ITEMS, DOSE_EVENTS`까지.
-`MEDICATION_INVENTORY, ESCALATION_*, NOTIFICATIONS`는 Phase 2~4.
+`MEDICATION_INVENTORY, ESCALATION_*, NOTIFICATIONS`는 Phase 2~4, `TTS_CLIPS, IMAGES`는 Phase 5.
 
 ## 6. API 초안
 
@@ -92,6 +100,7 @@ HTTP 동사 의미 준수, 페이지네이션. 문서화는 springdoc-openapi(Sw
 - 게이트: `./gradlew ktlintCheck detekt test build`. 리뷰 루프: `loop.sh`(Claude 구현 → Codex 리뷰).
 - 배포: GitHub Actions → GHCR 이미지 → EC2 docker compose(nginx TLS + certbot). 세부는 DEPLOY.md.
 - API 문서: springdoc-openapi(Swagger UI) — 엔드포인트 추가 시 자동 노출.
+- 오브젝트 스토리지(이미지·TTS MP3): AWS S3 또는 자체 호스팅 MinIO(S3 호환) — 동일 S3 API 코드. (Phase 5)
 
 ## 9. 리스크 · 고려사항
 
