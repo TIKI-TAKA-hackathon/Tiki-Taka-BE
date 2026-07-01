@@ -54,8 +54,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/stdiodh/tiki-taka-be:latest
-            ghcr.io/stdiodh/tiki-taka-be:${{ github.sha }}
+            ghcr.io/tiki-taka-hackathon/tiki-taka-be:latest
+            ghcr.io/tiki-taka-hackathon/tiki-taka-be:${{ github.sha }}
 
   deploy:
     needs: verify-and-build

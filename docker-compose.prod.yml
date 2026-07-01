@@ -9,4 +9,4 @@
 # The image is published by .github/workflows/deploy.yml.
 services:
   backend:
-    image: ghcr.io/stdiodh/tiki-taka-be:latest
+    image: ghcr.io/tiki-taka-hackathon/tiki-taka-be:latest

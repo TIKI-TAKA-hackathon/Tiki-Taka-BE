@@ -10,7 +10,7 @@ image), `nginx` (TLS termination for `api.stdiodh.xyz`, proxies `/api` to the ba
 `certbot` (Let's Encrypt issuance + auto-renew).
 
 ```
-push main ──▶ verify-and-build (GHCR: ghcr.io/stdiodh/tiki-taka-be:latest + :<sha>)
+push main ──▶ verify-and-build (GHCR: ghcr.io/tiki-taka-hackathon/tiki-taka-be:latest + :<sha>)
           └─▶ deploy (SSH) ──▶ git pull ──▶ compose pull backend ──▶ compose up -d
 ```
 
@@ -51,7 +51,7 @@ gh secret set EC2_SSH_KEY < ~/.ssh/your-deploy-key
 
 ```bash
 # 1) Clone the repo to the path the deploy workflow expects
-cd ~ && git clone https://github.com/stdiodh/Tiki-Taka-BE.git
+cd ~ && git clone https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE.git
 cd ~/Tiki-Taka-BE
 
 # 2) Create the server env file (never committed)
