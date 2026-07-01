@@ -4,5 +4,7 @@ api/.gradle/
 api/build/
 api/.env
 
+.review/
+
 tools/go/bin/
 tools/go/*.test
