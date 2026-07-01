@@ -61,6 +61,8 @@ jobs:
     needs: verify-and-build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      packages: read
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1
@@ -69,6 +71,7 @@ jobs:
           username: ${{ secrets.EC2_USER || 'ubuntu' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin &&
             cd ~/Tiki-Taka-BE && git pull &&
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull backend &&
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
