@@ -1,0 +1,12 @@
+# Production override — run the prebuilt image from GHCR instead of building on the server.
+#
+# Compose merges the two files; this override only swaps the backend build for a pulled image.
+# The base docker-compose.yml already defines the backend environment, so it is inherited here.
+# Usage on the server:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull backend
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# The image is published by .github/workflows/deploy.yml.
+services:
+  backend:
+    image: ghcr.io/stdiodh/tiki-taka-be:latest

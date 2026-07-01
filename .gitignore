@@ -1,10 +1,21 @@
+# Gradle / build
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+*.iml
+.idea/
+
+# OS
 .DS_Store
 
-api/.gradle/
-api/build/
-api/.env
+# Secrets / local config
+.env
 
+# certbot runtime data (generated on the server, not committed)
+certbot/conf/
+certbot/www/
+
+# review loop scratch
 .review/
-
-tools/go/bin/
-tools/go/*.test
