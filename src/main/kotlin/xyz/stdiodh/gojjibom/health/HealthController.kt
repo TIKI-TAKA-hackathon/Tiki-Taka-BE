@@ -6,11 +6,11 @@ import java.time.Instant
 
 @RestController
 class HealthController {
-
     @GetMapping("/api/health")
-    fun health(): Map<String, Any> = mapOf(
-        "status" to "UP",
-        "service" to "gojjibom-api",
-        "time" to Instant.now().toString(),
-    )
+    fun health(): Map<String, Any> =
+        mapOf(
+            "status" to "UP",
+            "service" to "gojjibom-api",
+            "time" to Instant.now().toString(),
+        )
 }
