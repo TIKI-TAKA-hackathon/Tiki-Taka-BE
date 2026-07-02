@@ -59,4 +59,21 @@ interface DoseEventRepository : JpaRepository<DoseEventEntity, Long> {
         from: LocalDate,
         to: LocalDate,
     ): List<DoseEventEntity>
+
+    @Query(
+        """
+        select event
+        from DoseEventEntity event
+        join fetch event.doseSchedule schedule
+        where event.senior.id = :seniorId
+          and event.scheduledDate between :from and :to
+          and event.photoImageId is not null
+        order by event.scheduledAt desc, event.id desc
+        """,
+    )
+    fun findPhotosBySeniorIdAndScheduledDateBetween(
+        seniorId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): List<DoseEventEntity>
 }
