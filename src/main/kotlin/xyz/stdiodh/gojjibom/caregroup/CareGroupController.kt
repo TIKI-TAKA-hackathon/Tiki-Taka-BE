@@ -29,6 +29,11 @@ class CareGroupController(
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(careGroupService.createCareGroup(request)))
 
+    @GetMapping("/care-groups:lookup")
+    fun lookupBySeniorPhone(
+        @RequestParam seniorPhone: String,
+    ): ApiResponse<CareGroupLookupResponse> = ApiResponse.success(careGroupService.lookupBySeniorPhone(seniorPhone))
+
     @GetMapping("/care-groups/{id}")
     fun getCareGroup(
         @PathVariable id: Long,

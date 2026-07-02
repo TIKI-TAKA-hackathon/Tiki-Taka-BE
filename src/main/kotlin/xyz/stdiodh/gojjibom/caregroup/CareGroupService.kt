@@ -15,6 +15,7 @@ class CareGroupService(
     private val members: CareGroupMemberRepository,
     private val inviteLinks: InviteLinkRepository,
     private val mealTimes: MealTimeRepository,
+    private val notificationSettings: NotificationSettingsRepository,
     private val changeLogs: ChangeLogRepository,
     private val mapper: CareGroupMapper,
 ) {
@@ -217,6 +218,67 @@ class CareGroupService(
         }
 
         return mapper.toResponse(saved)
+    }
+
+    @Transactional(readOnly = true)
+    fun getNotificationSettings(seniorId: Long): NotificationSettingsResponse {
+        val settings = notificationSettings.findBySeniorId(seniorId)
+        return if (settings == null) {
+            mapper.defaultNotificationSettings(seniorId)
+        } else {
+            mapper.toResponse(settings)
+        }
+    }
+
+    @Transactional
+    fun updateNotificationSettings(
+        seniorId: Long,
+        request: UpdateNotificationSettingsRequest,
+    ): NotificationSettingsResponse {
+        val group =
+            careGroups.findBySeniorId(seniorId)
+                ?: throw CareGroupErrors.notFound("CARE_GROUP_NOT_FOUND", "Senior does not have a care group")
+        requirePrimary(group.requiredId(), request.actorUserId)
+
+        val now = now()
+        val actor = users.getReferenceById(request.actorUserId)
+        val existing = notificationSettings.findBySeniorId(seniorId)
+        val settings =
+            if (existing == null) {
+                NotificationSettingsEntity(
+                    senior = group.senior,
+                    enabled = request.enabled,
+                    remindIntervalMin = request.remindIntervalMin,
+                    maxRetries = request.maxRetries,
+                    updatedBy = actor,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+            } else {
+                existing.enabled = request.enabled
+                existing.remindIntervalMin = request.remindIntervalMin
+                existing.maxRetries = request.maxRetries
+                existing.updatedBy = actor
+                existing.updatedAt = now
+                existing
+            }
+
+        return mapper.toResponse(notificationSettings.save(settings))
+    }
+
+    @Transactional(readOnly = true)
+    fun lookupBySeniorPhone(seniorPhone: String): CareGroupLookupResponse {
+        val senior =
+            users.findByPhone(seniorPhone.trim())
+                ?: throw CareGroupErrors.notFound("CARE_GROUP_NOT_FOUND", "No care group found for this phone")
+        val group =
+            careGroups.findBySeniorId(senior.requiredId())
+                ?: throw CareGroupErrors.notFound("CARE_GROUP_NOT_FOUND", "No care group found for this phone")
+        return CareGroupLookupResponse(
+            careGroupId = group.requiredId(),
+            seniorId = senior.requiredId(),
+            seniorName = senior.name,
+        )
     }
 
     @Transactional

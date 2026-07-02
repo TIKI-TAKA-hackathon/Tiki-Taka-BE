@@ -11,3 +11,5 @@ fun InviteLinkEntity.requiredId(): Long = id ?: throw IllegalStateException("Inv
 fun MealTimeEntity.requiredId(): Long = id ?: throw IllegalStateException("Meal time id is not assigned")
 
 fun ChangeLogEntity.requiredId(): Long = id ?: throw IllegalStateException("Change log id is not assigned")
+
+fun NotificationSettingsEntity.requiredId(): Long = id ?: throw IllegalStateException("Notification id is not assigned")

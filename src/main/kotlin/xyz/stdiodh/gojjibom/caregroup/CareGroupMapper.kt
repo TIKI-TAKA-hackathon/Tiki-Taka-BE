@@ -36,6 +36,24 @@ class CareGroupMapper(
             updatedAt = mealTimes.updatedAt,
         )
 
+    fun toResponse(settings: NotificationSettingsEntity): NotificationSettingsResponse =
+        NotificationSettingsResponse(
+            seniorId = settings.senior.requiredId(),
+            enabled = settings.enabled,
+            remindIntervalMin = settings.remindIntervalMin,
+            maxRetries = settings.maxRetries,
+            updatedAt = settings.updatedAt,
+        )
+
+    fun defaultNotificationSettings(seniorId: Long): NotificationSettingsResponse =
+        NotificationSettingsResponse(
+            seniorId = seniorId,
+            enabled = true,
+            remindIntervalMin = NotificationSettingsEntity.DEFAULT_REMIND_INTERVAL_MIN,
+            maxRetries = NotificationSettingsEntity.DEFAULT_MAX_RETRIES,
+            updatedAt = null,
+        )
+
     fun toResponse(log: ChangeLogEntity): ChangeLogResponse =
         ChangeLogResponse(
             id = log.requiredId(),
