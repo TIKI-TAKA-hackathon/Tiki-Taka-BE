@@ -3,6 +3,7 @@ package xyz.stdiodh.gojjibom.dose
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -42,4 +43,10 @@ class DoseController(
         @PathVariable id: Long,
         @Valid @RequestBody request: ConfirmDoseRequest,
     ): ApiResponse<DoseEventResponse> = ApiResponse.success(doseService.confirm(id, request))
+
+    @PatchMapping("/dose-events/{id}/photo:review")
+    fun reviewPhoto(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: ReviewPhotoRequest,
+    ): ApiResponse<DoseEventResponse> = ApiResponse.success(doseService.reviewPhoto(id, request))
 }

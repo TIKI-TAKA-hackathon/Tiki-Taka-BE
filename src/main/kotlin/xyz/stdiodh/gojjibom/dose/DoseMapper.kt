@@ -22,6 +22,7 @@ class DoseMapper {
             confirmMethod = event.confirmMethod,
             confirmedByUserId = event.confirmedById,
             photoImageId = event.photoImageId,
+            photoReviewStatus = event.photoReviewStatus,
             label = schedule.label,
             slot = schedule.slot,
             packetNo = schedule.packetNo,

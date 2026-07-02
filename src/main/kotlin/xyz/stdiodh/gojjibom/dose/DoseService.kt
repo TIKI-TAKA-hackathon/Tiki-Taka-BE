@@ -72,6 +72,7 @@ class DoseService(
         request.imageId?.let { imageId ->
             imageService.assertDoseEventImage(imageId, event.requiredId(), careGroupId)
             event.photoImageId = imageId
+            event.photoReviewStatus = PhotoReviewStatus.PENDING
         }
 
         event.status = DoseEventStatus.TAKEN
@@ -80,6 +81,36 @@ class DoseService(
         event.confirmedById = request.actorUserId
 
         return mapper.toResponse(event)
+    }
+
+    @Transactional
+    fun reviewPhoto(
+        id: Long,
+        request: ReviewPhotoRequest,
+    ): DoseEventResponse {
+        requireReviewDecision(request.reviewStatus)
+
+        val event =
+            doseEvents.findDetailById(id)
+                ?: throw DoseErrors.notFound("DOSE_EVENT_NOT_FOUND", "Dose event not found")
+        val careGroup = careGroupOrThrow(event.senior.requiredId())
+        requireActiveMember(careGroup.requiredId(), request.actorUserId)
+        requireDoseEventPhoto(event)
+
+        event.photoReviewStatus = request.reviewStatus
+        return mapper.toResponse(event)
+    }
+
+    private fun requireReviewDecision(reviewStatus: PhotoReviewStatus) {
+        if (reviewStatus == PhotoReviewStatus.PENDING) {
+            throw DoseErrors.badRequest("INVALID_REVIEW_STATUS", "Review status must be REVIEWED or FLAGGED")
+        }
+    }
+
+    private fun requireDoseEventPhoto(event: DoseEventEntity) {
+        if (event.photoImageId == null) {
+            throw DoseErrors.badRequest("DOSE_EVENT_PHOTO_REQUIRED", "Dose event has no photo to review")
+        }
     }
 
     private fun seniorOrThrow(seniorId: Long) {

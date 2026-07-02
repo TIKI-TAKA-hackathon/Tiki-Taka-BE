@@ -30,6 +30,12 @@ enum class ConfirmMethod {
     AUTO,
 }
 
+enum class PhotoReviewStatus {
+    PENDING,
+    REVIEWED,
+    FLAGGED,
+}
+
 @Entity
 @Table(name = "dose_events")
 class DoseEventEntity(
@@ -58,6 +64,9 @@ class DoseEventEntity(
     var confirmedById: Long? = null,
     @Column(name = "photo_image_id")
     var photoImageId: Long? = null,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "photo_review_status")
+    var photoReviewStatus: PhotoReviewStatus? = null,
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime = OffsetDateTime.now(),
 )

@@ -20,6 +20,7 @@ data class DoseEventResponse(
     val confirmMethod: ConfirmMethod?,
     val confirmedByUserId: Long?,
     val photoImageId: Long?,
+    val photoReviewStatus: PhotoReviewStatus?,
     val label: String,
     val slot: DoseSlot,
     val packetNo: Int?,
@@ -44,4 +45,11 @@ data class ConfirmDoseRequest(
     val method: ConfirmMethod,
     @field:Min(1)
     val imageId: Long?,
+)
+
+data class ReviewPhotoRequest(
+    @field:Min(1)
+    val actorUserId: Long,
+    @field:NotNull
+    val reviewStatus: PhotoReviewStatus,
 )

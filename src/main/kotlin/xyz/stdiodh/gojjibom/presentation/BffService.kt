@@ -22,6 +22,7 @@ class BffService(
     private val generator: DoseEventGenerator,
     private val seniorDayAssembler: SeniorDayAssembler,
     private val caregiverBoardAssembler: CaregiverBoardAssembler,
+    private val photoGalleryAssembler: PhotoGalleryAssembler,
 ) {
     @Transactional
     fun seniorToday(
@@ -45,5 +46,19 @@ class BffService(
         generator.ensureEventsFor(seniorId, date)
         val events = doseEvents.findBySeniorIdAndScheduledDate(seniorId, date)
         return caregiverBoardAssembler.assemble(careGroup, date, events)
+    }
+
+    @Transactional(readOnly = true)
+    fun photoGallery(
+        careGroupId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): PhotoGallery {
+        val careGroup =
+            careGroups.findByIdOrNull(careGroupId)
+                ?: throw ApiException(HttpStatus.NOT_FOUND, "CARE_GROUP_NOT_FOUND", "Care group not found")
+        val seniorId = careGroup.senior.requiredId()
+        val events = doseEvents.findPhotosBySeniorIdAndScheduledDateBetween(seniorId, from, to)
+        return photoGalleryAssembler.assemble(careGroupId, events)
     }
 }
