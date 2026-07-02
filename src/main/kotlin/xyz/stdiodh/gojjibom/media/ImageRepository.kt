@@ -11,10 +11,3 @@ interface ImageRepository : JpaRepository<ImageEntity, Long> {
         ownerId: Long,
     ): ImageEntity?
 }
-
-interface TtsClipRepository : JpaRepository<TtsClipEntity, Long> {
-    fun findByVoiceAndTextHash(
-        voice: String,
-        textHash: String,
-    ): TtsClipEntity?
-}

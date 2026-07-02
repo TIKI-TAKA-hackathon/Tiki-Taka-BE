@@ -16,7 +16,6 @@ import xyz.stdiodh.gojjibom.shared.ApiResponse
 @RequestMapping("/api/v1/media")
 class MediaController(
     private val imageService: ImageService,
-    private val ttsService: TtsService,
 ) {
     @PostMapping("/images/upload-url")
     fun createImageUploadUrl(
@@ -47,9 +46,4 @@ class MediaController(
                 careGroupId = careGroupId,
             ),
         )
-
-    @PostMapping("/tts-clips")
-    fun createTtsClip(
-        @Valid @RequestBody request: TtsClipRequest,
-    ): ApiResponse<TtsClipResponse> = ApiResponse.success(ttsService.getOrRenderClip(request))
 }

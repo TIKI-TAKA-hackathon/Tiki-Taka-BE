@@ -3,7 +3,6 @@ package xyz.stdiodh.gojjibom.media
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
-import java.time.LocalTime
 import java.time.OffsetDateTime
 
 data class ImageUploadUrlRequest(
@@ -60,26 +59,4 @@ data class ImageViewUrlResponse(
     val imageId: Long,
     val viewUrl: String,
     val expiresAt: OffsetDateTime,
-)
-
-data class TtsClipRequest(
-    @field:Min(1)
-    val actorUserId: Long,
-    @field:Min(1)
-    val careGroupId: Long,
-    @field:NotBlank
-    val voice: String = "ko_default",
-    @field:NotBlank
-    val doseLabel: String,
-    val scheduledTime: LocalTime,
-)
-
-data class TtsClipResponse(
-    val id: Long,
-    val voice: String,
-    val text: String,
-    val objectKey: String,
-    val playUrl: String,
-    val expiresAt: OffsetDateTime,
-    val durationMs: Int,
 )
