@@ -15,8 +15,12 @@ spring:
 
 server:
   port: 8080
+  forward-headers-strategy: native
+  tomcat:
+    redirect-context-root: false
 
 app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
