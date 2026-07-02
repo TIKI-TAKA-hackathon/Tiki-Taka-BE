@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.containers.PostgreSQLContainer
@@ -162,6 +163,146 @@ class CareGroupIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("OWNER_MEMBER_IMMUTABLE"))
     }
 
+    @Test
+    fun `owner is created as the primary caregiver`() {
+        val group = createCareGroup("primary-owner")
+
+        mockMvc
+            .perform(get("/api/v1/care-groups/${group.groupId}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.members[0].isPrimary").value(true))
+            .andExpect(jsonPath("$.data.members[0].viewerOnly").value(false))
+    }
+
+    @Test
+    fun `only the primary caregiver can edit meal times`() {
+        val group = createCareGroup("meal-primary")
+        val familyMemberId = approveActiveFamily(group, "meal-primary")
+        val familyUserId = memberUserId(group, familyMemberId)
+
+        mockMvc
+            .perform(
+                put("/api/v1/seniors/${group.seniorUserId}/meal-times")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mealTimesBody(familyUserId)),
+            ).andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.code").value("PRIMARY_REQUIRED"))
+    }
+
+    @Test
+    fun `updating meal times upserts and writes one change log row per changed field`() {
+        val group = createCareGroup("meal-log")
+
+        mockMvc
+            .perform(
+                put("/api/v1/seniors/${group.seniorUserId}/meal-times")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mealTimesBody(group.ownerUserId, "08:00", "12:30", "18:30")),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.breakfast").value("08:00:00"))
+
+        // Only lunch and dinner change on the second update -> two change_log rows total.
+        mockMvc
+            .perform(
+                put("/api/v1/seniors/${group.seniorUserId}/meal-times")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(mealTimesBody(group.ownerUserId, "08:00", "13:00", "19:00")),
+            ).andExpect(status().isOk)
+
+        // First upsert had no existing row -> 3 rows; second changed 2 fields -> 2 rows; total 5.
+        mockMvc
+            .perform(
+                get("/api/v1/care-groups/${group.groupId}/change-log")
+                    .param("limit", "10"),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.length()").value(5))
+            .andExpect(jsonPath("$.data[0].targetType").value("MEAL_TIME"))
+    }
+
+    @Test
+    fun `primary transfer moves the flag to the target member`() {
+        val group = createCareGroup("primary-transfer")
+        val familyMemberId = approveActiveFamily(group, "primary-transfer")
+
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/primary")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"actorUserId": ${group.ownerUserId}, "memberId": $familyMemberId}"""),
+            ).andExpect(status().isOk)
+
+        val refreshed =
+            mockMvc
+                .perform(get("/api/v1/care-groups/${group.groupId}"))
+                .andExpect(status().isOk)
+                .andReturn()
+                .dataNode()
+
+        val primaryMemberIds =
+            refreshed
+                .path("members")
+                .filter { it.path("isPrimary").asBoolean() }
+                .map { it.path("id").asLong() }
+        assertThat(primaryMemberIds).containsExactly(familyMemberId)
+    }
+
+    private fun approveActiveFamily(
+        group: CreatedGroup,
+        suffix: String,
+    ): Long {
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+        val member = acceptInvite(token, suffix)
+        val memberId = member.path("id").asLong()
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/members/$memberId")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "actorUserId": ${group.ownerUserId},
+                          "status": "ACTIVE",
+                          "role": "FAMILY"
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isOk)
+        return memberId
+    }
+
+    private fun memberUserId(
+        group: CreatedGroup,
+        memberId: Long,
+    ): Long {
+        val data =
+            mockMvc
+                .perform(get("/api/v1/care-groups/${group.groupId}"))
+                .andExpect(status().isOk)
+                .andReturn()
+                .dataNode()
+        return data
+            .path("members")
+            .first { it.path("id").asLong() == memberId }
+            .path("user")
+            .path("id")
+            .asLong()
+    }
+
+    private fun mealTimesBody(
+        actorUserId: Long,
+        breakfast: String = "08:00",
+        lunch: String = "12:30",
+        dinner: String = "18:30",
+    ): String =
+        """
+        {
+          "actorUserId": $actorUserId,
+          "breakfast": "$breakfast",
+          "lunch": "$lunch",
+          "dinner": "$dinner"
+        }
+        """.trimIndent()
+
     private fun createCareGroup(suffix: String): CreatedGroup {
         val result =
             mockMvc
@@ -191,6 +332,7 @@ class CareGroupIntegrationTest {
         val ownerMember = data.path("members").path(0)
         return CreatedGroup(
             groupId = data.path("id").asLong(),
+            seniorUserId = data.path("senior").path("id").asLong(),
             ownerUserId = ownerMember.path("user").path("id").asLong(),
             ownerMemberId = ownerMember.path("id").asLong(),
         )
@@ -246,6 +388,7 @@ class CareGroupIntegrationTest {
 
     private data class CreatedGroup(
         val groupId: Long,
+        val seniorUserId: Long,
         val ownerUserId: Long,
         val ownerMemberId: Long,
     )

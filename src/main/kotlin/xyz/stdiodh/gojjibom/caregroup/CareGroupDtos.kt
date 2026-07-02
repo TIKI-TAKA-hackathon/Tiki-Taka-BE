@@ -1,9 +1,12 @@
 package xyz.stdiodh.gojjibom.caregroup
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.OffsetDateTime
 
 data class CreateCareGroupRequest(
@@ -62,6 +65,48 @@ data class CareGroupMemberResponse(
     val role: CareGroupRole,
     val status: MemberStatus,
     val joinedAt: OffsetDateTime?,
+    @get:JsonProperty("isPrimary")
+    val isPrimary: Boolean,
+    val viewerOnly: Boolean,
+)
+
+data class UpdatePrimaryRequest(
+    val actorUserId: Long,
+    val memberId: Long,
+)
+
+data class MealTimesResponse(
+    val seniorId: Long,
+    val breakfast: LocalTime,
+    val lunch: LocalTime,
+    val dinner: LocalTime,
+    val updatedAt: OffsetDateTime,
+)
+
+data class UpdateMealTimesRequest(
+    val actorUserId: Long,
+    @field:NotNull
+    val breakfast: LocalTime,
+    @field:NotNull
+    val lunch: LocalTime,
+    @field:NotNull
+    val dinner: LocalTime,
+)
+
+data class ChangeLogResponse(
+    val id: Long,
+    val actorUserId: Long,
+    val targetType: ChangeTargetType,
+    val targetId: Long?,
+    val field: String,
+    val oldValue: String?,
+    val newValue: String?,
+    val createdAt: OffsetDateTime,
+)
+
+data class CareCircleResponse(
+    val family: Int,
+    val social: Int,
 )
 
 data class CareGroupResponse(

@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>TooManyFunctions:CareGroupService.kt:CareGroupService</ID>
+    <ID>TooManyFunctions:ImageService.kt:ImageService</ID>
+    <ID>TooManyFunctions:PrescriptionService.kt:PrescriptionService</ID>
+    <ID>UnusedParameter:DoseEventGenerator.kt:DoseEventGenerator$seniorId: Long</ID>
+  </CurrentIssues>
+</SmellBaseline>

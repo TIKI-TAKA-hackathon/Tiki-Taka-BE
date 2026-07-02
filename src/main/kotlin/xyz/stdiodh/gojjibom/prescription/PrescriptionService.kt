@@ -11,6 +11,10 @@ import xyz.stdiodh.gojjibom.caregroup.UserEntity
 import xyz.stdiodh.gojjibom.caregroup.UserRepository
 import xyz.stdiodh.gojjibom.caregroup.UserType
 import xyz.stdiodh.gojjibom.caregroup.requiredId
+import xyz.stdiodh.gojjibom.prescription.presentation.ConfirmMedsAssembler
+import xyz.stdiodh.gojjibom.prescription.presentation.PrescriptionHistoryAssembler
+import java.time.Clock
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 @Service
@@ -24,6 +28,9 @@ class PrescriptionService(
     private val doseSchedules: DoseScheduleRepository,
     private val doseScheduleItems: DoseScheduleItemRepository,
     private val mapper: PrescriptionMapper,
+    private val confirmMedsAssembler: ConfirmMedsAssembler,
+    private val prescriptionHistoryAssembler: PrescriptionHistoryAssembler,
+    private val clock: Clock,
 ) {
     @Transactional
     fun createPrescription(
@@ -46,6 +53,8 @@ class PrescriptionService(
                     startDate = request.startDate,
                     endDate = request.endDate,
                     status = PrescriptionStatus.ACTIVE,
+                    dispensingType = request.dispensingType ?: DispensingType.POUCH,
+                    registrationCode = request.registrationCode?.trim()?.ifBlank { null },
                     createdAt = OffsetDateTime.now(),
                 ),
             )
@@ -67,6 +76,32 @@ class PrescriptionService(
 
         val schedules = doseSchedules.findActiveBySeniorId(seniorId)
         return mapper.toListResponse(seniorId, schedules)
+    }
+
+    @Transactional(readOnly = true)
+    fun lookupByRegistrationCode(code: String): ConfirmMedsView {
+        val prescription =
+            prescriptions.findForConfirmByCode(code)
+                ?: throw PrescriptionErrors.notFound("PRESCRIPTION_NOT_FOUND", "Prescription not found for code")
+        val schedules =
+            prescription.schedules
+                .filter { it.active }
+                .sortedWith(compareBy({ it.scheduledTime }, { it.requiredId() }))
+        return confirmMedsAssembler.toConfirmMedsView(prescription, schedules)
+    }
+
+    @Transactional(readOnly = true)
+    fun getPrescriptionHistory(
+        seniorId: Long,
+        actorUserId: Long,
+    ): PrescriptionHistoryListView {
+        seniorOrThrow(seniorId, "Prescription history target must be a senior")
+        val careGroup = careGroupOrThrow(seniorId)
+        requireActiveMember(careGroup.requiredId(), actorUserId)
+
+        val history = prescriptions.findAllBySeniorIdOrderByStartDateDesc(seniorId)
+        val today = LocalDate.now(clock)
+        return prescriptionHistoryAssembler.toHistoryList(seniorId, history, today)
     }
 
     private fun seniorOrThrow(
@@ -150,6 +185,7 @@ class PrescriptionService(
                     mealRelation = request.mealRelation,
                     mealOffsetMin = request.mealOffsetMin,
                     pillCount = pillCount,
+                    doseBasis = request.doseBasis ?: deriveDoseBasis(request.mealRelation, request.slot),
                     active = true,
                 ),
             )
@@ -198,7 +234,20 @@ class PrescriptionService(
                     name = name,
                     category = category,
                     description = request.description?.trim()?.ifBlank { null },
+                    shape = request.shape ?: PillShape.ROUND,
                 ),
             )
     }
+
+    private fun deriveDoseBasis(
+        mealRelation: MealRelation,
+        slot: DoseSlot,
+    ): DoseBasis =
+        when {
+            mealRelation == MealRelation.BEFORE_MEAL -> DoseBasis.BEFORE_MEAL
+            mealRelation == MealRelation.AFTER_MEAL -> DoseBasis.AFTER_MEAL
+            mealRelation == MealRelation.WITH_MEAL -> DoseBasis.AFTER_MEAL
+            slot == DoseSlot.BEDTIME -> DoseBasis.BEDTIME
+            else -> DoseBasis.FIXED
+        }
 }

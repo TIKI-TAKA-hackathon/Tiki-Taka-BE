@@ -34,4 +34,18 @@ class PrescriptionController(
         val schedules = prescriptionService.getDoseSchedules(seniorId, actorUserId)
         return ApiResponse.success(schedules)
     }
+
+    @GetMapping("/prescriptions:lookup")
+    fun lookupByRegistrationCode(
+        @RequestParam code: String,
+    ): ApiResponse<ConfirmMedsView> = ApiResponse.success(prescriptionService.lookupByRegistrationCode(code))
+
+    @GetMapping("/seniors/{seniorId}/prescriptions")
+    fun getPrescriptionHistory(
+        @PathVariable seniorId: Long,
+        @RequestParam actorUserId: Long,
+    ): ApiResponse<PrescriptionHistoryListView> {
+        val history = prescriptionService.getPrescriptionHistory(seniorId, actorUserId)
+        return ApiResponse.success(history)
+    }
 }

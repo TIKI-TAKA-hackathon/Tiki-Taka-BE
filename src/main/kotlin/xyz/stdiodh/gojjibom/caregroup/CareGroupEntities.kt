@@ -91,6 +91,8 @@ class CareGroupMemberEntity(
     var invitedBy: UserEntity? = null,
     @Column(name = "joined_at")
     var joinedAt: OffsetDateTime? = null,
+    @Column(name = "is_primary", nullable = false)
+    var isPrimary: Boolean = false,
 )
 
 @Entity

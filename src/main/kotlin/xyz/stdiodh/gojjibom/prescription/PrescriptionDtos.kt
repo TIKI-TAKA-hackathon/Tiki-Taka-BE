@@ -14,6 +14,8 @@ data class CreatePrescriptionRequest(
     val prescribedDate: LocalDate,
     val startDate: LocalDate,
     val endDate: LocalDate?,
+    val dispensingType: DispensingType? = null,
+    val registrationCode: String? = null,
     @field:Valid
     @field:NotEmpty
     val schedules: List<CreateDoseScheduleRequest>,
@@ -39,6 +41,7 @@ data class CreateDoseScheduleRequest(
     val mealOffsetMin: Int?,
     @field:Min(1)
     val pillCount: Int?,
+    val doseBasis: DoseBasis? = null,
     @field:Valid
     @field:NotEmpty
     val items: List<CreateDoseScheduleItemRequest>,
@@ -51,6 +54,7 @@ data class CreateDoseScheduleItemRequest(
     val description: String?,
     @field:Min(1)
     val count: Int,
+    val shape: PillShape? = null,
 )
 
 data class PharmacyResponse(
@@ -69,6 +73,8 @@ data class PrescriptionResponse(
     val startDate: LocalDate,
     val endDate: LocalDate?,
     val status: PrescriptionStatus,
+    val dispensingType: DispensingType,
+    val registrationCode: String?,
     val schedules: List<DoseScheduleResponse>,
 )
 
@@ -87,6 +93,7 @@ data class DoseScheduleResponse(
     val mealRelation: MealRelation,
     val mealOffsetMin: Int?,
     val pillCount: Int?,
+    val doseBasis: DoseBasis,
     val active: Boolean,
     val prescriptionStartDate: LocalDate,
     val prescriptionEndDate: LocalDate?,
@@ -100,4 +107,5 @@ data class DoseScheduleItemResponse(
     val category: String?,
     val description: String?,
     val count: Int,
+    val shape: PillShape,
 )
