@@ -12,6 +12,7 @@ import xyz.stdiodh.gojjibom.dose.DoseEventRepository
 import xyz.stdiodh.gojjibom.dose.DoseEventStatus
 import xyz.stdiodh.gojjibom.dose.requiredId
 import xyz.stdiodh.gojjibom.presentation.PresentationFormat
+import java.time.Clock
 import java.time.OffsetDateTime
 
 /**
@@ -28,8 +29,13 @@ import java.time.OffsetDateTime
  * mean re-running over the same clock never inserts a duplicate rung.
  *
  * Wording stays at "약 미확인" — no fall/emergency-detection overclaim (spec 005 §G).
- * Actual delivery (web push / SMS) is the separate WP3b task; this only writes
- * in-app `notifications` rows.
+ *
+ * WP3b: after a MISSED/ESCALATION row is created it is dispatched to the care group's
+ * caregiver (대표자 first, then an active OWNER/FAMILY) via the configured
+ * [NotificationSender] (a STUB by default), and the delivery outcome is persisted on
+ * the row. REMINDER rows and disabled-settings cases are never dispatched. Dispatch is
+ * idempotent: a row is only dispatched on the run that first inserts it, so re-running
+ * the evaluator never re-sends an already-dispatched notification.
  */
 @Component
 class MissedDoseEvaluator(
@@ -38,6 +44,9 @@ class MissedDoseEvaluator(
     private val careGroups: CareGroupRepository,
     private val notifications: NotificationRepository,
     private val properties: NotificationProperties,
+    private val recipientResolver: CaregiverRecipientResolver,
+    private val sender: NotificationSender,
+    private val clock: Clock,
 ) {
     /**
      * Evaluates all overdue scheduled events as of [now] and returns the number
@@ -84,7 +93,7 @@ class MissedDoseEvaluator(
         if (event.status == DoseEventStatus.SCHEDULED) {
             event.status = DoseEventStatus.MISSED
         }
-        return insertNotification(event, careGroupId, NotificationType.MISSED, MISSED_LEVEL)
+        return insertNotification(event, careGroupId, NotificationType.MISSED, MISSED_LEVEL) != null
     }
 
     /** Records escalation rungs whose cadence deadline has passed, up to max_retries. */
@@ -100,41 +109,71 @@ class MissedDoseEvaluator(
             if (now.isBefore(deadline)) {
                 break
             }
-            if (insertNotification(event, careGroupId, NotificationType.ESCALATION, level)) {
+            if (insertNotification(event, careGroupId, NotificationType.ESCALATION, level) != null) {
                 created++
             }
         }
         return created
     }
 
+    /**
+     * Inserts a notification rung (idempotent via the pre-check + UNIQUE guard) and,
+     * for MISSED/ESCALATION rungs, dispatches it to the care group's caregiver. Returns
+     * the saved row on a fresh insert, or null when it already existed / a concurrent run
+     * inserted it — so dispatch only ever happens on the run that first creates the row.
+     */
     private fun insertNotification(
         event: DoseEventEntity,
         careGroupId: Long,
         type: NotificationType,
         level: Int,
-    ): Boolean {
+    ): NotificationEntity? {
         val doseEventId = event.requiredId()
         if (notifications.existsByDoseEventIdAndTypeAndLevel(doseEventId, type, level)) {
-            return false
+            return null
         }
         val label = PresentationFormat.slotLabel(event.doseSchedule.label, event.doseSchedule.packetNo)
-        return try {
-            notifications.save(
-                NotificationEntity(
-                    careGroupId = careGroupId,
-                    seniorId = event.senior.requiredId(),
-                    doseEventId = doseEventId,
-                    type = type,
-                    level = level,
-                    title = titleFor(type, level),
-                    body = bodyFor(type, level, label),
-                    createdAt = OffsetDateTime.now(),
-                ),
-            )
-            true
-        } catch (_: DataIntegrityViolationException) {
-            // A concurrent run already inserted this rung; the UNIQUE guard deduplicates.
-            false
+        val saved =
+            try {
+                notifications.save(
+                    NotificationEntity(
+                        careGroupId = careGroupId,
+                        seniorId = event.senior.requiredId(),
+                        doseEventId = doseEventId,
+                        type = type,
+                        level = level,
+                        title = titleFor(type, level),
+                        body = bodyFor(type, level, label),
+                        createdAt = OffsetDateTime.now(),
+                    ),
+                )
+            } catch (_: DataIntegrityViolationException) {
+                // A concurrent run already inserted this rung; the UNIQUE guard deduplicates.
+                null
+            }
+        saved?.let { dispatchToCaregiver(careGroupId, it) }
+        return saved
+    }
+
+    /**
+     * Delivers a freshly-created MISSED/ESCALATION notification to the care group's
+     * caregiver via the configured [NotificationSender] and records the outcome on the
+     * row. No-ops for REMINDER, when the row was already dispatched, or when the group
+     * has no eligible caregiver recipient.
+     */
+    private fun dispatchToCaregiver(
+        careGroupId: Long,
+        notification: NotificationEntity,
+    ) {
+        if (notification.type == NotificationType.REMINDER || notification.dispatchedAt != null) {
+            return
+        }
+        val recipient = recipientResolver.resolve(careGroupId) ?: return
+        val result = sender.dispatch(recipient.phone, recipient.name, notification)
+        if (result.success) {
+            notification.dispatchedAt = OffsetDateTime.now(clock)
+            notification.dispatchTarget = result.target
+            notification.dispatchChannel = result.channel.name
         }
     }
 
