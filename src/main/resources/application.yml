@@ -15,7 +15,9 @@ spring:
 
 server:
   port: 8080
-  forward-headers-strategy: native
+  # framework: Spring's ForwardedHeaderFilter honors nginx X-Forwarded-Proto=https,
+  # so springdoc emits https server URLs (fixes Swagger mixed-content behind TLS).
+  forward-headers-strategy: framework
   tomcat:
     redirect-context-root: false
 
