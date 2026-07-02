@@ -3,8 +3,25 @@ package xyz.stdiodh.gojjibom.dose
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
+import java.time.OffsetDateTime
 
 interface DoseEventRepository : JpaRepository<DoseEventEntity, Long> {
+    @Query(
+        """
+        select event
+        from DoseEventEntity event
+        join fetch event.doseSchedule schedule
+        join fetch event.senior senior
+        where event.status in (
+            xyz.stdiodh.gojjibom.dose.DoseEventStatus.SCHEDULED,
+            xyz.stdiodh.gojjibom.dose.DoseEventStatus.MISSED
+        )
+          and event.scheduledAt <= :cutoff
+        order by event.scheduledAt asc, event.id asc
+        """,
+    )
+    fun findOverdueOpen(cutoff: OffsetDateTime): List<DoseEventEntity>
+
     @Query(
         """
         select distinct event

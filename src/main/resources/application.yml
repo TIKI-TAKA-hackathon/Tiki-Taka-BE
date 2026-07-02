@@ -25,6 +25,13 @@ app:
   public-base-url: ${APP_PUBLIC_BASE_URL:}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  notifications:
+    # WP3a missed-dose / escalation engine. Delivery channels (web push / SMS)
+    # are WP3b and are NOT wired here.
+    missed-grace-min: ${APP_NOTIFICATIONS_MISSED_GRACE_MIN:0}
+    scheduler:
+      enabled: ${APP_NOTIFICATIONS_SCHEDULER_ENABLED:true}
+      fixed-rate-ms: ${APP_NOTIFICATIONS_SCHEDULER_FIXED_RATE_MS:60000}
 
 springdoc:
   paths-to-match:
