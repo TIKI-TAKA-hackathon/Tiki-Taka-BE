@@ -116,6 +116,12 @@ data class CareGroupResponse(
     val members: List<CareGroupMemberResponse>,
 )
 
+data class CareGroupLookupResponse(
+    val careGroupId: Long,
+    val seniorId: Long,
+    val seniorName: String,
+)
+
 data class InviteLinkResponse(
     val id: Long,
     val token: String,

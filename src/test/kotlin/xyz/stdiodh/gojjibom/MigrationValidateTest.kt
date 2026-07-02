@@ -30,7 +30,7 @@ class MigrationValidateTest {
 
     @Test
     fun `flyway migrations apply and hibernate ddl-auto validate passes`() {
-        // Context startup runs Flyway (V1..V9) then Hibernate ddl-auto=validate.
+        // Context startup runs Flyway (V1..V10) then Hibernate ddl-auto=validate.
         // A schema/entity mismatch fails context init before this body runs.
     }
 }
