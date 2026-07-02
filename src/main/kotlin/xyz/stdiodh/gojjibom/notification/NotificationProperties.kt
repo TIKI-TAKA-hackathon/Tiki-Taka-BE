@@ -12,6 +12,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class NotificationProperties(
     /** Grace window (minutes) after scheduled_at before an event flips to MISSED. */
     val missedGraceMin: Int = 0,
+    /**
+     * Caregiver dispatch provider (WP3b): `stub` | `kakao` | `sms`. Selects the active
+     * [NotificationSender] bean; defaults to `stub` (logs only, no external I/O).
+     */
+    val provider: String = "stub",
     val scheduler: Scheduler = Scheduler(),
 ) {
     data class Scheduler(

@@ -46,4 +46,13 @@ class NotificationEntity(
     var createdAt: OffsetDateTime = OffsetDateTime.now(),
     @Column(name = "read_at")
     var readAt: OffsetDateTime? = null,
+    // WP3b caregiver dispatch outcome (kakao 알림톡 / SMS; currently a STUB).
+    // dispatchedAt != null means this row was already delivered — used to keep
+    // the escalation evaluator idempotent (never re-dispatch a sent row).
+    @Column(name = "dispatched_at")
+    var dispatchedAt: OffsetDateTime? = null,
+    @Column(name = "dispatch_target", length = 30)
+    var dispatchTarget: String? = null,
+    @Column(name = "dispatch_channel", length = 20)
+    var dispatchChannel: String? = null,
 )
