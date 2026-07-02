@@ -26,6 +26,14 @@ interface CareGroupMemberRepository : JpaRepository<CareGroupMemberEntity, Long>
         status: MemberStatus,
     ): Boolean
 
+    fun existsByCareGroupIdAndUserIdAndStatusAndIsPrimaryTrue(
+        careGroupId: Long,
+        userId: Long,
+        status: MemberStatus,
+    ): Boolean
+
+    fun findByCareGroupIdAndIsPrimaryTrue(careGroupId: Long): CareGroupMemberEntity?
+
     fun findByCareGroupIdOrderByIdAsc(careGroupId: Long): List<CareGroupMemberEntity>
 
     fun findByCareGroupIdAndUserId(

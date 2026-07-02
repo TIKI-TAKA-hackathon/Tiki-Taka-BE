@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import xyz.stdiodh.gojjibom.shared.ApiResponse
 
+private const val DEFAULT_CHANGE_LOG_LIMIT = 20
+
 @RestController
 @RequestMapping("/api/v1")
 class CareGroupController(
@@ -69,4 +71,16 @@ class CareGroupController(
         val member = careGroupService.removeMember(id, memberId, actorUserId)
         return ApiResponse.success(member)
     }
+
+    @PatchMapping("/care-groups/{id}/primary")
+    fun transferPrimary(
+        @PathVariable id: Long,
+        @RequestBody request: UpdatePrimaryRequest,
+    ): ApiResponse<CareGroupResponse> = ApiResponse.success(careGroupService.transferPrimary(id, request))
+
+    @GetMapping("/care-groups/{id}/change-log")
+    fun getChangeLog(
+        @PathVariable id: Long,
+        @RequestParam(required = false, defaultValue = "$DEFAULT_CHANGE_LOG_LIMIT") limit: Int,
+    ): ApiResponse<List<ChangeLogResponse>> = ApiResponse.success(careGroupService.getChangeLog(id, limit))
 }

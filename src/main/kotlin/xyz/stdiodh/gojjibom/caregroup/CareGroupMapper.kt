@@ -23,7 +23,37 @@ class CareGroupMapper(
             role = member.role,
             status = member.status,
             joinedAt = member.joinedAt,
+            isPrimary = member.isPrimary,
+            viewerOnly = !member.isPrimary,
         )
+
+    fun toResponse(mealTimes: MealTimeEntity): MealTimesResponse =
+        MealTimesResponse(
+            seniorId = mealTimes.senior.requiredId(),
+            breakfast = mealTimes.breakfastTime,
+            lunch = mealTimes.lunchTime,
+            dinner = mealTimes.dinnerTime,
+            updatedAt = mealTimes.updatedAt,
+        )
+
+    fun toResponse(log: ChangeLogEntity): ChangeLogResponse =
+        ChangeLogResponse(
+            id = log.requiredId(),
+            actorUserId = log.actorUserId,
+            targetType = log.targetType,
+            targetId = log.targetId,
+            field = log.field,
+            oldValue = log.oldValue,
+            newValue = log.newValue,
+            createdAt = log.createdAt,
+        )
+
+    fun circleOf(members: List<CareGroupMemberEntity>): CareCircleResponse {
+        val active = members.filter { it.status == MemberStatus.ACTIVE }
+        val family = active.count { it.role == CareGroupRole.OWNER || it.role == CareGroupRole.FAMILY }
+        val social = active.count { it.role == CareGroupRole.SOCIAL_WORKER }
+        return CareCircleResponse(family = family, social = social)
+    }
 
     fun toResponse(inviteLink: InviteLinkEntity): InviteLinkResponse =
         InviteLinkResponse(

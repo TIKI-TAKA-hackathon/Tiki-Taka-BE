@@ -9,10 +9,6 @@ aws:
   s3:
     bucket: test-bucket
 
-kokoro:
-  tts:
-    url: http://unused
-
 app:
   cors:
     allowed-origins: http://localhost:5173

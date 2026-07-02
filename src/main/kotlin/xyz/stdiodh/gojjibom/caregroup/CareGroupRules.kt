@@ -1,9 +1,52 @@
 package xyz.stdiodh.gojjibom.caregroup
 
 import xyz.stdiodh.gojjibom.shared.ApiException
+import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 object CareGroupRules {
+    private val TIME_LABEL: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun mealTimeChangeLog(
+        careGroupId: Long,
+        actorUserId: Long,
+        seniorId: Long,
+        existing: MealTimeEntity?,
+        breakfast: LocalTime,
+        lunch: LocalTime,
+        dinner: LocalTime,
+        currentTime: OffsetDateTime,
+    ): List<ChangeLogEntity> {
+        val changes =
+            listOf(
+                Triple("breakfast_time", existing?.breakfastTime, breakfast),
+                Triple("lunch_time", existing?.lunchTime, lunch),
+                Triple("dinner_time", existing?.dinnerTime, dinner),
+            )
+        return changes
+            .filter { (_, old, new) -> old != new }
+            .map { (field, old, new) ->
+                ChangeLogEntity(
+                    careGroupId = careGroupId,
+                    actorUserId = actorUserId,
+                    targetType = ChangeTargetType.MEAL_TIME,
+                    targetId = seniorId,
+                    field = field,
+                    oldValue = old?.format(TIME_LABEL),
+                    newValue = new.format(TIME_LABEL),
+                    createdAt = currentTime,
+                )
+            }
+    }
+
+    fun transferPrimaryFailure(target: CareGroupMemberEntity): ApiException? =
+        if (target.status != MemberStatus.ACTIVE) {
+            CareGroupErrors.badRequest("INVALID_PRIMARY_TARGET", "Primary target must be an active member")
+        } else {
+            null
+        }
+
     fun inviteAcceptanceFailure(
         invite: InviteLinkEntity,
         role: CareGroupRole,

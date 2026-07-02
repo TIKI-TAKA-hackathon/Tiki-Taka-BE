@@ -150,7 +150,7 @@ BE가 실제로 구현한 엔드포인트:
 3. BE: CORS에 `https://gojjibom.web.app` 추가. → Verify: preflight `OPTIONS` 200 + `Access-Control-Allow-Origin` 확인.
 
 ### S1. dose_events + 복용 확인 (spec 003) — **BE 핵심 결손**
-1. `V5__dose_events.sql`: `dose_events`(ERD대로) 생성. → Verify: `./gradlew flywayMigrate` 후 `ddl-auto: validate` 통과.
+1. `V6__dose_events.sql`: `dose_events`(ERD대로) 생성. (미디어 PR이 V5를 점유했으므로 dose_events는 V6) → Verify: `./gradlew flywayMigrate` 후 `ddl-auto: validate` 통과.
 2. 당일 dose_event 생성기: 활성 `dose_schedules` → 오늘(Asia/Seoul) `SCHEDULED` 이벤트. 우선 **조회 시 지연 생성(lazy)** 으로 단순화, 배치는 Phase 2에서. → Verify: 통합테스트(스케줄 2개→이벤트 2개, 멱등).
 3. 엔드포인트:
    - `GET /api/v1/seniors/{id}/doses?date=&actorUserId=` → 당일 이벤트 목록(granular).
@@ -225,13 +225,19 @@ BE가 실제로 구현한 엔드포인트:
 
 ## 7. Flyway 마이그레이션 계획
 
-| 버전 | 내용 | 단계 | 비고 |
-| --- | --- | --- | --- |
-| V1,V3,V4 | (완료) baseline·care-group·prescription | — | V2 결번 |
-| `V5` | `dose_events` | S1 | 리마인더는 S6로 분리 |
-| `V6` | `medication_inventory` | S5 | |
-| `V7` | `reminders`,`escalation_policies`,`escalation_events`,`notifications` | S6 | 분할 가능 |
-| `V8` | 이미지 + `medications.shape` | S7 | **보류 미디어 PR의 V2를 여기로 리넘버링** |
+> **업데이트(2026-07-02):** 미디어 PR이 이미 **V5**를 점유해, 이 절 초안의 "V5=dose_events"는 무효다.
+> spec 005 BE 싱크는 `feat/006-be-sync-ux005`에서 **V6~V9로 구현 완료**됐다. V5는 재사용 금지.
+
+| 버전 | 내용 | 상태 |
+| --- | --- | --- |
+| V1, V3, V4 | baseline · care-group · prescription (V2 결번) | 완료 |
+| V5 | `tts_clips` · `images` (미디어) | 완료 |
+| V6 | `dose_events` | 완료 (feat/006) |
+| V7 | `prescriptions.dispensing_type`·`registration_code`, `medications.shape`, `dose_schedules.dose_basis` | 완료 (feat/006) |
+| V8 | `care_group_members.is_primary` | 완료 (feat/006) |
+| V9 | `meal_times`, `change_log` | 완료 (feat/006) |
+| V10 | `medication_inventory` (재고) | 예정 (S5) |
+| V11 | `reminders`·`escalation_policies`·`escalation_events`·`notifications` | 예정 (S6) |
 
 원칙: forward-only, 스키마 변경은 반드시 마이그레이션으로, `ddl-auto: validate` 유지.
 

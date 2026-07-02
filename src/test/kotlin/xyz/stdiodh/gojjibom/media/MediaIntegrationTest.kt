@@ -2,7 +2,6 @@ package xyz.stdiodh.gojjibom.media
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -56,15 +55,11 @@ class MediaIntegrationTest {
     @Autowired
     private lateinit var objectStorage: FakeObjectStorage
 
-    @Autowired
-    private lateinit var ttsRenderer: FakeTtsRenderer
-
     private val objectMapper = ObjectMapper()
 
     @BeforeEach
     fun resetFakes() {
         objectStorage.reset()
-        ttsRenderer.reset()
     }
 
     @Test
@@ -169,29 +164,6 @@ class MediaIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("IMAGE_OBJECT_KEY_DENIED"))
     }
 
-    @Test
-    fun `tts clip renders on cache miss and reuses cached row`() {
-        val member = createActiveMember("tts")
-        val first = createTtsClip(member)
-        val second = createTtsClip(member)
-
-        assertThat(ttsRenderer.renderCount).isEqualTo(1)
-        assertThat(first.path("id").asLong()).isEqualTo(second.path("id").asLong())
-        assertThat(first.path("text").asText()).contains("약국에서 등록한 복약 정보 안내")
-        assertThat(objectStorage.putObjects).containsKey(first.path("objectKey").asText())
-    }
-
-    @Test
-    fun `tts clip requires active care group membership`() {
-        mockMvc
-            .perform(
-                post("/api/v1/media/tts-clips")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(ttsBody(actorUserId = 999, careGroupId = 999)),
-            ).andExpect(status().isForbidden)
-            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_MEMBER_REQUIRED"))
-    }
-
     private fun createImageUploadUrl(member: TestMember): JsonNode =
         mockMvc
             .perform(
@@ -200,17 +172,6 @@ class MediaIntegrationTest {
                     .content(imageUploadUrlBody(actorUserId = member.actorUserId, careGroupId = member.careGroupId)),
             ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.data.uploadUrl").exists())
-            .andReturn()
-            .dataNode()
-
-    private fun createTtsClip(member: TestMember): JsonNode =
-        mockMvc
-            .perform(
-                post("/api/v1/media/tts-clips")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(ttsBody(actorUserId = member.actorUserId, careGroupId = member.careGroupId)),
-            ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.data.playUrl").exists())
             .andReturn()
             .dataNode()
 
@@ -244,20 +205,6 @@ class MediaIntegrationTest {
           "objectKey": "$objectKey",
           "contentType": "image/jpeg",
           "sizeBytes": 512
-        }
-        """.trimIndent()
-
-    private fun ttsBody(
-        actorUserId: Long,
-        careGroupId: Long,
-    ): String =
-        """
-        {
-          "actorUserId": $actorUserId,
-          "careGroupId": $careGroupId,
-          "voice": "ko_default",
-          "doseLabel": "저녁약",
-          "scheduledTime": "19:30:00"
         }
         """.trimIndent()
 
@@ -324,10 +271,6 @@ class MediaIntegrationTest {
         @Bean
         @Primary
         fun objectStorage(): FakeObjectStorage = FakeObjectStorage()
-
-        @Bean
-        @Primary
-        fun ttsRenderer(): FakeTtsRenderer = FakeTtsRenderer()
     }
 }
 
@@ -366,22 +309,5 @@ class FakeObjectStorage : ObjectStorage {
         bytes: ByteArray,
     ) {
         putObjects[objectKey] = bytes
-    }
-}
-
-class FakeTtsRenderer : TtsRenderer {
-    var renderCount: Int = 0
-        private set
-
-    fun reset() {
-        renderCount = 0
-    }
-
-    override fun render(
-        voice: String,
-        text: String,
-    ): RenderedTts {
-        renderCount += 1
-        return RenderedTts(mp3Bytes = "mp3:$voice:$text".toByteArray(), durationMs = 1200)
     }
 }

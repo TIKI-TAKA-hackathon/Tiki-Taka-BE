@@ -86,6 +86,40 @@ class ImageService(
         )
     }
 
+    /**
+     * Demo-grade signed view URL for the unauthenticated BFF read endpoints
+     * (/senior/today, /care-groups/{id}/board). No membership check by design
+     * (SYNC-PLAN §4-7); returns null when the image is missing so the BFF payload
+     * degrades gracefully. Harden alongside the BFF endpoints in S8.
+     */
+    fun viewUrlForImage(imageId: Long): String? {
+        val image = images.findById(imageId).orElse(null) ?: return null
+        return objectStorage
+            .presignView(
+                objectKey = image.objectKey,
+                ttlSeconds = mediaProperties.viewUrlTtlSeconds,
+            ).url
+    }
+
+    fun assertDoseEventImage(
+        imageId: Long,
+        doseEventId: Long,
+        careGroupId: Long,
+    ) {
+        val image =
+            images.findByIdAndOwnerTypeAndOwnerId(imageId, MediaOwnerType.DOSE_EVENT, doseEventId)
+                ?: throw MediaErrors.badRequest(
+                    "INVALID_IMAGE_OWNER",
+                    "Image must be owned by this dose event",
+                )
+        if (!image.objectKey.startsWith(imageObjectKeyPrefix(careGroupId))) {
+            throw MediaErrors.badRequest(
+                "INVALID_IMAGE_OWNER",
+                "Image must belong to the same care group as the dose event",
+            )
+        }
+    }
+
     private fun normalizeContentType(contentType: String): String = contentType.trim().lowercase()
 
     private fun validateImage(

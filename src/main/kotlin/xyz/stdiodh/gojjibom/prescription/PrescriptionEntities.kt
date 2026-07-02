@@ -1,6 +1,7 @@
 package xyz.stdiodh.gojjibom.prescription
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -35,6 +36,25 @@ enum class MealRelation {
     AFTER_MEAL,
     WITH_MEAL,
     NONE,
+}
+
+enum class DoseBasis {
+    BEFORE_MEAL,
+    AFTER_MEAL,
+    BEDTIME,
+    EMPTY_STOMACH,
+    FIXED,
+}
+
+enum class DispensingType {
+    POUCH,
+    ORGANIZER,
+}
+
+enum class PillShape {
+    ROUND,
+    OVAL,
+    CAPSULE,
 }
 
 @Entity
@@ -75,6 +95,11 @@ class PrescriptionEntity(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: PrescriptionStatus = PrescriptionStatus.ACTIVE,
+    @Convert(converter = DispensingTypeConverter::class)
+    @Column(name = "dispensing_type", nullable = false)
+    var dispensingType: DispensingType = DispensingType.POUCH,
+    @Column(name = "registration_code")
+    var registrationCode: String? = null,
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime = OffsetDateTime.now(),
     @OneToMany(mappedBy = "prescription")
@@ -95,6 +120,9 @@ class MedicationEntity(
     var photoUrl: String? = null,
     @Column
     var description: String? = null,
+    @Convert(converter = PillShapeConverter::class)
+    @Column(name = "shape", nullable = false)
+    var shape: PillShape = PillShape.ROUND,
 )
 
 @Entity
@@ -122,6 +150,9 @@ class DoseScheduleEntity(
     var mealOffsetMin: Int? = null,
     @Column(name = "pill_count")
     var pillCount: Int? = null,
+    @Convert(converter = DoseBasisConverter::class)
+    @Column(name = "dose_basis", nullable = false)
+    var doseBasis: DoseBasis = DoseBasis.FIXED,
     @Column(nullable = false)
     var active: Boolean = true,
     @OneToMany(mappedBy = "doseSchedule")

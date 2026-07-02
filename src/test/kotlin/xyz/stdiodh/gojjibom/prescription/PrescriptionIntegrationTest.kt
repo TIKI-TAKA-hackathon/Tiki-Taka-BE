@@ -205,6 +205,73 @@ class PrescriptionIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("DUPLICATE_SCHEDULE_ITEM"))
     }
 
+    @Test
+    fun `confirm-meds lookup hides diagnosis and pharmacy contact fields`() {
+        val group = createCareGroup("prv01")
+        val pharmacistUserId = createUser("prv01-pharmacist", UserType.PHARMACIST)
+        val code = "RX-PRV01-${phoneSequence.incrementAndGet()}"
+        registerPrescriptionWithCode(group.seniorUserId, pharmacistUserId, code)
+
+        val result =
+            mockMvc
+                .perform(get("/api/v1/prescriptions:lookup").param("code", code))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("$.data.pharmacyName").value("Gojjibom Pharmacy"))
+                .andExpect(jsonPath("$.data.registrationCode").value(code))
+                .andExpect(jsonPath("$.data.dispensingType").value("pouch"))
+                .andExpect(jsonPath("$.data.schedules[0].doseBasis").value("after_meal"))
+                .andReturn()
+
+        val json = result.response.contentAsString
+        // PRV-01: response must not carry 병명(category), pharmacy phone/address.
+        assert(!json.contains("\"category\"")) { "lookup response leaked category: $json" }
+        assert(!json.contains("\"phone\"")) { "lookup response leaked phone: $json" }
+        assert(!json.contains("\"address\"")) { "lookup response leaked address: $json" }
+        assert(!json.contains("Blood pressure")) { "lookup response leaked diagnosis text: $json" }
+    }
+
+    @Test
+    fun `confirm-meds lookup returns 404 for unknown code`() {
+        mockMvc
+            .perform(get("/api/v1/prescriptions:lookup").param("code", "RX-DOES-NOT-EXIST"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("PRESCRIPTION_NOT_FOUND"))
+    }
+
+    @Test
+    fun `prescription history derives active and ended status by end date`() {
+        val group = createCareGroup("history")
+        val pharmacistUserId = createUser("history-pharmacist", UserType.PHARMACIST)
+        // Past prescription (ended: end_date is well before any realistic today).
+        registerPrescriptionWithDates(group.seniorUserId, pharmacistUserId, "2020-01-01", "2020-01-15")
+        // Open-ended prescription (active).
+        registerPrescriptionWithDates(group.seniorUserId, pharmacistUserId, "2026-06-01", null)
+
+        mockMvc
+            .perform(
+                get("/api/v1/seniors/${group.seniorUserId}/prescriptions")
+                    .param("actorUserId", group.ownerUserId.toString()),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.seniorId").value(group.seniorUserId.toString()))
+            .andExpect(jsonPath("$.data.items.length()").value(2))
+            // Ordered by start_date desc: the 2026 (active) entry comes first.
+            .andExpect(jsonPath("$.data.items[0].status").value("active"))
+            .andExpect(jsonPath("$.data.items[1].status").value("ended"))
+    }
+
+    @Test
+    fun `prescription history rejects non-member`() {
+        val group = createCareGroup("history-forbidden")
+        val stranger = createUser("history-stranger", UserType.CAREGIVER)
+
+        mockMvc
+            .perform(
+                get("/api/v1/seniors/${group.seniorUserId}/prescriptions")
+                    .param("actorUserId", stranger.toString()),
+            ).andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_MEMBER_REQUIRED"))
+    }
+
     private fun createCareGroup(suffix: String): CreatedGroup {
         val result =
             mockMvc
@@ -286,6 +353,98 @@ class PrescriptionIntegrationTest {
                         """.trimIndent(),
                     ),
             ).andExpect(status().isOk)
+    }
+
+    private fun registerPrescriptionWithCode(
+        seniorUserId: Long,
+        pharmacistUserId: Long,
+        code: String,
+    ) {
+        mockMvc
+            .perform(
+                post("/api/v1/seniors/$seniorUserId/prescriptions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "pharmacistUserId": $pharmacistUserId,
+                          "pharmacy": {
+                            "name": "Gojjibom Pharmacy",
+                            "phone": "02-0000-0000",
+                            "address": "Seoul"
+                          },
+                          "prescribedDate": "2026-07-02",
+                          "startDate": "2026-07-02",
+                          "endDate": "2026-07-16",
+                          "dispensingType": "POUCH",
+                          "registrationCode": "$code",
+                          "schedules": [
+                            {
+                              "slot": "MORNING",
+                              "label": "아침약",
+                              "packetNo": 1,
+                              "scheduledTime": "08:30",
+                              "mealRelation": "AFTER_MEAL",
+                              "mealOffsetMin": 30,
+                              "pillCount": 1,
+                              "items": [
+                                {
+                                  "medicationName": "Blood pressure pill",
+                                  "category": "Blood pressure",
+                                  "count": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isCreated)
+    }
+
+    private fun registerPrescriptionWithDates(
+        seniorUserId: Long,
+        pharmacistUserId: Long,
+        startDate: String,
+        endDate: String?,
+    ) {
+        val endDateJson = endDate?.let { "\"$it\"" } ?: "null"
+        mockMvc
+            .perform(
+                post("/api/v1/seniors/$seniorUserId/prescriptions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "pharmacistUserId": $pharmacistUserId,
+                          "pharmacy": {
+                            "name": "Gojjibom Pharmacy",
+                            "phone": "02-0000-0000"
+                          },
+                          "prescribedDate": "$startDate",
+                          "startDate": "$startDate",
+                          "endDate": $endDateJson,
+                          "schedules": [
+                            {
+                              "slot": "MORNING",
+                              "label": "아침약",
+                              "packetNo": 1,
+                              "scheduledTime": "08:30",
+                              "mealRelation": "AFTER_MEAL",
+                              "mealOffsetMin": 30,
+                              "pillCount": 1,
+                              "items": [
+                                {
+                                  "medicationName": "Blood pressure pill",
+                                  "count": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isCreated)
     }
 
     private fun createUser(

@@ -36,16 +36,10 @@ data class MediaProperties(
     val viewUrlTtlSeconds: Long = 300,
 )
 
-@ConfigurationProperties(prefix = "kokoro.tts")
-data class KokoroTtsProperties(
-    val url: String = "",
-)
-
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(
     AwsStorageProperties::class,
     MediaProperties::class,
-    KokoroTtsProperties::class,
 )
 class MediaConfig {
     @Bean

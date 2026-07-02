@@ -38,23 +38,3 @@ class ImageEntity(
     @Column(name = "created_at", nullable = false)
     var createdAt: OffsetDateTime = OffsetDateTime.now(),
 )
-
-@Entity
-@Table(name = "tts_clips")
-class TtsClipEntity(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
-    @Column(name = "text_hash", nullable = false)
-    var textHash: String = "",
-    @Column(nullable = false)
-    var voice: String = "",
-    @Column(nullable = false)
-    var text: String = "",
-    @Column(name = "object_key", nullable = false)
-    var objectKey: String = "",
-    @Column(name = "duration_ms", nullable = false)
-    var durationMs: Int = 0,
-    @Column(name = "created_at", nullable = false)
-    var createdAt: OffsetDateTime = OffsetDateTime.now(),
-)

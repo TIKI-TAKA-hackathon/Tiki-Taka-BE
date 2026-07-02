@@ -1,5 +1,6 @@
 package xyz.stdiodh.gojjibom.caregroup
 
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,6 +14,8 @@ class CareGroupService(
     private val careGroups: CareGroupRepository,
     private val members: CareGroupMemberRepository,
     private val inviteLinks: InviteLinkRepository,
+    private val mealTimes: MealTimeRepository,
+    private val changeLogs: ChangeLogRepository,
     private val mapper: CareGroupMapper,
 ) {
     @Transactional
@@ -59,6 +62,7 @@ class CareGroupService(
                 role = CareGroupRole.OWNER,
                 status = MemberStatus.ACTIVE,
                 joinedAt = now,
+                isPrimary = true,
             ),
         )
 
@@ -152,6 +156,132 @@ class CareGroupService(
             memberId = memberId,
             request = UpdateMemberRequest(actorUserId = actorUserId, status = MemberStatus.REMOVED, role = null),
         )
+
+    @Transactional(readOnly = true)
+    fun getMealTimes(seniorId: Long): MealTimesResponse {
+        val mealTime =
+            mealTimes.findBySeniorId(seniorId)
+                ?: throw CareGroupErrors.notFound("MEAL_TIMES_NOT_FOUND", "Meal times are not set for this senior")
+        return mapper.toResponse(mealTime)
+    }
+
+    @Transactional
+    fun updateMealTimes(
+        seniorId: Long,
+        request: UpdateMealTimesRequest,
+    ): MealTimesResponse {
+        val group =
+            careGroups.findBySeniorId(seniorId)
+                ?: throw CareGroupErrors.notFound("CARE_GROUP_NOT_FOUND", "Senior does not have a care group")
+        val groupId = group.requiredId()
+        requirePrimary(groupId, request.actorUserId)
+
+        val now = now()
+        val existing = mealTimes.findBySeniorId(seniorId)
+        val logs =
+            CareGroupRules.mealTimeChangeLog(
+                careGroupId = groupId,
+                actorUserId = request.actorUserId,
+                seniorId = seniorId,
+                existing = existing,
+                breakfast = request.breakfast,
+                lunch = request.lunch,
+                dinner = request.dinner,
+                currentTime = now,
+            )
+
+        val actor = users.getReferenceById(request.actorUserId)
+        val mealTime =
+            if (existing == null) {
+                MealTimeEntity(
+                    senior = group.senior,
+                    breakfastTime = request.breakfast,
+                    lunchTime = request.lunch,
+                    dinnerTime = request.dinner,
+                    updatedBy = actor,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+            } else {
+                existing.breakfastTime = request.breakfast
+                existing.lunchTime = request.lunch
+                existing.dinnerTime = request.dinner
+                existing.updatedBy = actor
+                existing.updatedAt = now
+                existing
+            }
+        val saved = mealTimes.save(mealTime)
+
+        if (logs.isNotEmpty()) {
+            changeLogs.saveAll(logs)
+        }
+
+        return mapper.toResponse(saved)
+    }
+
+    @Transactional
+    fun transferPrimary(
+        careGroupId: Long,
+        request: UpdatePrimaryRequest,
+    ): CareGroupResponse {
+        requirePrimary(careGroupId, request.actorUserId)
+
+        val target =
+            members.findByIdAndCareGroupId(request.memberId, careGroupId)
+                ?: throw CareGroupErrors.notFound("MEMBER_NOT_FOUND", "Care group member not found")
+        CareGroupRules.transferPrimaryFailure(target)?.let { throw it }
+
+        val current = members.findByCareGroupIdAndIsPrimaryTrue(careGroupId)
+        // Clear the old primary and flush before setting the new one so the partial
+        // unique index (one is_primary=TRUE per group) never sees two live primaries.
+        if (current != null && current.requiredId() != target.requiredId()) {
+            current.isPrimary = false
+            members.saveAndFlush(current)
+        }
+        target.isPrimary = true
+
+        changeLogs.save(
+            ChangeLogEntity(
+                careGroupId = careGroupId,
+                actorUserId = request.actorUserId,
+                targetType = ChangeTargetType.MEMBER,
+                targetId = target.requiredId(),
+                field = "is_primary",
+                oldValue = current?.requiredId()?.toString(),
+                newValue = target.requiredId().toString(),
+                createdAt = now(),
+            ),
+        )
+
+        return mapper.toResponse(careGroupOrThrow(careGroupId))
+    }
+
+    @Transactional(readOnly = true)
+    fun getChangeLog(
+        careGroupId: Long,
+        limit: Int,
+    ): List<ChangeLogResponse> {
+        careGroupOrThrow(careGroupId)
+        return changeLogs
+            .findByCareGroupIdOrderByCreatedAtDesc(careGroupId, PageRequest.of(0, limit))
+            .map { mapper.toResponse(it) }
+    }
+
+    private fun requirePrimary(
+        careGroupId: Long,
+        userId: Long,
+    ) {
+        careGroupOrThrow(careGroupId)
+        val isPrimary =
+            members.existsByCareGroupIdAndUserIdAndStatusAndIsPrimaryTrue(
+                careGroupId = careGroupId,
+                userId = userId,
+                status = MemberStatus.ACTIVE,
+            )
+        if (!isPrimary) {
+            throw CareGroupErrors.forbidden("PRIMARY_REQUIRED", "Only the primary caregiver can perform this action")
+        }
+    }
 
     private fun findOrCreateUser(
         name: String,

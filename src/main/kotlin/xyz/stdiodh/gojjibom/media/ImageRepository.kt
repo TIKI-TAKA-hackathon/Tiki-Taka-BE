@@ -4,11 +4,10 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface ImageRepository : JpaRepository<ImageEntity, Long> {
     fun existsByObjectKey(objectKey: String): Boolean
-}
 
-interface TtsClipRepository : JpaRepository<TtsClipEntity, Long> {
-    fun findByVoiceAndTextHash(
-        voice: String,
-        textHash: String,
-    ): TtsClipEntity?
+    fun findByIdAndOwnerTypeAndOwnerId(
+        id: Long,
+        ownerType: MediaOwnerType,
+        ownerId: Long,
+    ): ImageEntity?
 }

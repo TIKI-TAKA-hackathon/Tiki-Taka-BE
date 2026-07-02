@@ -18,6 +18,8 @@ class PrescriptionMapper {
             startDate = prescription.startDate,
             endDate = prescription.endDate,
             status = prescription.status,
+            dispensingType = prescription.dispensingType,
+            registrationCode = prescription.registrationCode,
             schedules = schedules.map { toResponse(it) },
         )
 
@@ -49,6 +51,7 @@ class PrescriptionMapper {
             mealRelation = schedule.mealRelation,
             mealOffsetMin = schedule.mealOffsetMin,
             pillCount = schedule.pillCount,
+            doseBasis = schedule.doseBasis,
             active = schedule.active,
             prescriptionStartDate = schedule.prescription.startDate,
             prescriptionEndDate = schedule.prescription.endDate,
@@ -63,5 +66,6 @@ class PrescriptionMapper {
             category = item.medication.category,
             description = item.medication.description,
             count = item.count,
+            shape = item.medication.shape,
         )
 }
