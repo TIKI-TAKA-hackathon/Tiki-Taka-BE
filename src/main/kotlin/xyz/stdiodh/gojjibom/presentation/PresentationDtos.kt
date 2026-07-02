@@ -85,3 +85,19 @@ data class CaregiverBoard(
     val week: List<WeekDay>,
     val alert: EscalationAlert?,
 )
+
+data class GalleryPhoto(
+    val doseEventId: String,
+    val doseLabel: String,
+    val takenAtLabel: String,
+    val status: String,
+    val method: String?,
+    val reviewStatus: String,
+    val photoUrl: String,
+    val thumbnailUrl: String,
+)
+
+data class PhotoGallery(
+    val careGroupId: String,
+    val photos: List<GalleryPhoto>,
+)

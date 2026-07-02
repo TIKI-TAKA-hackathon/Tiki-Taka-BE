@@ -2,10 +2,12 @@ package xyz.stdiodh.gojjibom.presentation
 
 import xyz.stdiodh.gojjibom.dose.ConfirmMethod
 import xyz.stdiodh.gojjibom.dose.DoseEventStatus
+import xyz.stdiodh.gojjibom.dose.PhotoReviewStatus
 import xyz.stdiodh.gojjibom.prescription.DoseSlot
 import xyz.stdiodh.gojjibom.prescription.MealRelation
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
@@ -78,6 +80,15 @@ object PresentationFormat {
         }
 
     fun methodToLower(method: ConfirmMethod?): String = method?.name?.lowercase().orEmpty()
+
+    /** PENDING/REVIEWED/FLAGGED -> pending/reviewed/flagged; null -> pending. */
+    fun reviewStatusToLower(status: PhotoReviewStatus?): String = (status ?: PhotoReviewStatus.PENDING).name.lowercase()
+
+    /** '7월 2일 오후 7:30' from an OffsetDateTime rendered in Asia/Seoul. */
+    fun photoTakenAtLabel(takenAt: OffsetDateTime): String {
+        val local = takenAt.atZoneSameInstant(ZONE)
+        return "${local.monthValue}월 ${local.dayOfMonth}일 ${clockLabel(local.toLocalTime())}"
+    }
 
     fun methodKorean(method: ConfirmMethod?): String = method?.let { CONFIRM_METHOD_KOREAN[it] }.orEmpty()
 
