@@ -1,5 +1,8 @@
 # 고찌봄 로드맵 (spec 005 이후 후속 통합)
 
+> 보관 문서입니다. 작성 당시 후속 계획과 마이그레이션 번호가 현재 구현과 다를 수 있습니다.
+> 현재 구현 상태는 루트 `README.md`, `docs/ERD.md`, `src/main/resources/db/migration/`을 기준으로 확인하세요.
+
 > 작성 2026-07-02. 코어 BE 싱크(`feat/006-be-sync-ux005`, V6~V9 · dose_events/confirm/BFF/prescription-schema/대표자/meal_times/change_log)가 그린으로 완료된 시점의 후속 계획.
 > 근거 문서: [SYNC-PLAN.md](./SYNC-PLAN.md), FE `specs/005-ux-changes.md`, 그리고 사진 갤러리·QR 3단계·캘린더·PWA 푸시·TTS 논의.
 > 표기: FE / BE / EXT(외부). 우선순위는 데모 임계경로 기준.

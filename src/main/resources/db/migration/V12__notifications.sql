@@ -1,6 +1,5 @@
 -- V12__notifications.sql
 -- WP3a channel-independent reminder/escalation engine (in-app notifications).
--- V11 (photo review) is a pending PR; Flyway tolerates the version gap.
 -- type/level CHECK enums match the UPPERCASE Kotlin enum. Delivery channels
 -- (web push / SMS) are a SEPARATE later task (WP3b) and are NOT modelled here.
 -- The UNIQUE (dose_event_id, type, level) guard makes escalation generation

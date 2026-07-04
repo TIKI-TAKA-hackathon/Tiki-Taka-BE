@@ -1,6 +1,5 @@
 -- V13__notification_dispatch.sql
 -- WP3b caregiver notification DISPATCH tracking (카카오 알림톡 / SMS).
--- V11 (photo review) is still a pending PR; Flyway tolerates the version gap.
 --
 -- A MISSED/ESCALATION notification is delivered to the care group's caregiver(s)
 -- (senior misses a dose -> notify the 대표자/primary caregiver). These columns

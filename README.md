@@ -126,7 +126,7 @@ graph TD
 ├── docs/
 │   ├── assets/                    # README images
 │   ├── ERD.md                     # 복약 안부 도메인 ERD
-│   └── PLAN.md                    # 백엔드 구현 계획서
+│   └── archive/                   # historical implementation plans
 ├── nginx/conf.d/                  # TLS reverse proxy config
 ├── Dockerfile                     # multi-stage build
 ├── docker-compose.yml             # local/base compose

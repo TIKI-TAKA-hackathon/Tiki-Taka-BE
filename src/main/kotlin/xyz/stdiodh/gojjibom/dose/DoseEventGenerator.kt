@@ -20,11 +20,10 @@ class DoseEventGenerator(
         date: LocalDate,
     ): List<DoseEventEntity> {
         val schedules = doseSchedules.findActiveForDate(seniorId, date)
-        return schedules.mapNotNull { ensureEvent(seniorId, date, it) }
+        return schedules.mapNotNull { ensureEvent(date, it) }
     }
 
     private fun ensureEvent(
-        seniorId: Long,
         date: LocalDate,
         schedule: DoseScheduleEntity,
     ): DoseEventEntity? {

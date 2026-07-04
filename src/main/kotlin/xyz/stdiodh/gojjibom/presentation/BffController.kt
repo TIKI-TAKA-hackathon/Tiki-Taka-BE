@@ -11,7 +11,7 @@ import java.time.Clock
 import java.time.LocalDate
 
 /**
- * FE-shaped BFF aggregate endpoints. Unauthenticated demo (SYNC-PLAN §4-7);
+ * FE-shaped BFF aggregate endpoints. Unauthenticated demo contract;
  * date defaults to today in Asia/Seoul via the injected Clock.
  */
 @RestController

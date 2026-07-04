@@ -1,5 +1,8 @@
 # 고찌봄(Tiki-Taka) FE ↔ BE 싱크 계획서
 
+> 보관 문서입니다. 작성 당시 FE/BE 간극 분석이며, 일부 미구현/마이그레이션 계획은 현재 구현과 다릅니다.
+> 현재 구현 상태는 루트 `README.md`, `docs/ERD.md`, `src/main/resources/db/migration/`을 기준으로 확인하세요.
+
 > 작성 기준: FE `gojjibom-fe`(commit `8d33e0b`), BE `Tiki-Taka-BE`(PR #4 머지 시점).
 > 목적: 프론트가 실제로 소비하는 계약과 백엔드가 실제로 구현한 계약의 간극을 메우고, 뒤쳐진 BE를 데모 가능한 상태까지 끌어올리는 실행 계획.
 
