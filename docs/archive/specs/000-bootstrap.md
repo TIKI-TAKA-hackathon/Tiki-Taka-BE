@@ -1,5 +1,8 @@
 # 000 — Bootstrap BE repo (app + infra + review loop + CI)
 
+> 상태: **보관됨 · 구현 완료**
+> 현재 빌드·배포 설정은 루트 `README.md`, `build.gradle.kts`, `.github/workflows/deploy.yml`을 기준으로 확인합니다.
+
 ## Goal
 Stand up the 고찌봄 (Tiki-Taka) backend repository so that, after wiring GitHub Actions
 secrets, a push to `main` builds and deploys the API to EC2 over HTTPS. This is the

@@ -5,6 +5,7 @@ plugins {
     kotlin("plugin.spring") version "2.3.20"
     kotlin("plugin.jpa") version "2.3.20"
     id("org.springframework.boot") version "4.1.0"
+    jacoco
 
     // Review-loop gates: `./gradlew ktlintCheck detekt`.
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
@@ -61,15 +62,49 @@ kotlin {
 }
 
 // Accept the structural findings that already exist in the app services
-// (large service classes carried over from earlier stages, and the intentionally
-// uniform DoseEventGenerator.ensureEventsFor(seniorId, date) signature). The
-// baseline keeps detekt strict for any newly introduced code.
+// (large service classes carried over from earlier stages). The baseline keeps
+// detekt strict for any newly introduced code.
 detekt {
     baseline = file("detekt-baseline.xml")
 }
 
+jacoco {
+    toolVersion = "0.8.13"
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.95".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.65".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 // Produce a single, predictably-named boot jar for the Dockerfile.

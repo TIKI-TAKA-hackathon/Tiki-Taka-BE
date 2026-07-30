@@ -144,7 +144,7 @@ class MissedDoseEvaluator(
                         level = level,
                         title = titleFor(type, level),
                         body = bodyFor(type, level, label),
-                        createdAt = OffsetDateTime.now(),
+                        createdAt = OffsetDateTime.now(clock),
                     ),
                 )
             } catch (_: DataIntegrityViolationException) {

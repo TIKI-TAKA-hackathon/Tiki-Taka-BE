@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -47,6 +48,7 @@ class MissedDoseEvaluatorIntegrationTest {
             registry.add("spring.datasource.username", postgres::getUsername)
             registry.add("spring.datasource.password", postgres::getPassword)
             registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
+            registry.add("app.notifications.missed-grace-min") { 5 }
         }
     }
 
@@ -61,6 +63,8 @@ class MissedDoseEvaluatorIntegrationTest {
     @Autowired private lateinit var notifications: NotificationRepository
 
     @Autowired private lateinit var evaluator: MissedDoseEvaluator
+
+    @Autowired private lateinit var jdbcTemplate: JdbcTemplate
 
     private val objectMapper = ObjectMapper()
 
@@ -92,6 +96,43 @@ class MissedDoseEvaluatorIntegrationTest {
     }
 
     @Test
+    fun `grace deadline is exclusive before and inclusive at the exact boundary`() {
+        val group = createGroupWithDoseEvent(remindIntervalMin = 10, maxRetries = 2)
+        val eventId = generateEventId(group.seniorUserId)
+        val graceDeadline = scheduledAt.plusMinutes(5)
+
+        evaluator.evaluate(graceDeadline.minusNanos(1))
+        assertThat(doseEvents.findById(eventId).orElseThrow().status).isEqualTo(DoseEventStatus.SCHEDULED)
+        assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)).isEmpty()
+
+        evaluator.evaluate(graceDeadline)
+        assertThat(doseEvents.findById(eventId).orElseThrow().status).isEqualTo(DoseEventStatus.MISSED)
+        assertThat(
+            notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId).map { it.type to it.level },
+        ).containsExactly(NotificationType.MISSED to 0)
+    }
+
+    @Test
+    fun `remind interval deadline is exclusive before and inclusive at the exact boundary`() {
+        val group = createGroupWithDoseEvent(remindIntervalMin = 10, maxRetries = 2)
+        generateEventId(group.seniorUserId)
+
+        evaluator.evaluate(scheduledAt.plusMinutes(5))
+        evaluator.evaluate(scheduledAt.plusMinutes(10).minusNanos(1))
+        assertThat(
+            notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId).map { it.type to it.level },
+        ).containsExactly(NotificationType.MISSED to 0)
+
+        evaluator.evaluate(scheduledAt.plusMinutes(10))
+        assertThat(
+            notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId).map { it.type to it.level },
+        ).containsExactlyInAnyOrder(
+            NotificationType.MISSED to 0,
+            NotificationType.ESCALATION to 1,
+        )
+    }
+
+    @Test
     fun `evaluate is idempotent on re-run and only adds newly-due rungs`() {
         val group = createGroupWithDoseEvent(remindIntervalMin = 5, maxRetries = 3)
         generateEventId(group.seniorUserId)
@@ -116,6 +157,9 @@ class MissedDoseEvaluatorIntegrationTest {
         val afterThird = notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)
         assertThat(afterThird).hasSize(4)
         assertThat(afterThird.count { it.type == NotificationType.ESCALATION }).isEqualTo(3)
+
+        evaluator.evaluate(scheduledAt.plusHours(1))
+        assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)).hasSize(4)
     }
 
     @Test
@@ -123,9 +167,20 @@ class MissedDoseEvaluatorIntegrationTest {
         val group = createGroupWithDoseEvent(enabled = false, remindIntervalMin = 5, maxRetries = 3)
         val eventId = generateEventId(group.seniorUserId)
 
-        val created = evaluator.evaluate(scheduledAt.plusMinutes(30))
+        evaluator.evaluate(scheduledAt.plusMinutes(30))
 
-        assertThat(created).isEqualTo(0)
+        assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)).isEmpty()
+        assertThat(doseEvents.findById(eventId).orElseThrow().status).isEqualTo(DoseEventStatus.SCHEDULED)
+    }
+
+    @Test
+    fun `missing care group produces no notification and leaves event scheduled`() {
+        val group = createGroupWithDoseEvent(remindIntervalMin = 5, maxRetries = 3)
+        val eventId = generateEventId(group.seniorUserId)
+        jdbcTemplate.update("DELETE FROM care_group_members WHERE care_group_id = ?", group.groupId)
+        jdbcTemplate.update("DELETE FROM care_groups WHERE id = ?", group.groupId)
+
+        evaluator.evaluate(scheduledAt.plusMinutes(30))
         assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)).isEmpty()
         assertThat(doseEvents.findById(eventId).orElseThrow().status).isEqualTo(DoseEventStatus.SCHEDULED)
     }

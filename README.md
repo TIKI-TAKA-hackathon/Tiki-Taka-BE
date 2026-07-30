@@ -23,7 +23,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🔗 Links
+## 🔗 링크
 
 | 구분 | 링크 |
 | --- | --- |
@@ -34,51 +34,34 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🧡 Project Overview
+## 🧡 프로젝트 개요
 
-고찌봄은 **제주 지역 독거 어르신을 우선 대상으로 하는 복약 안부 서비스**입니다. 이름은
-고찌(제주어 `같이`)와 봄(`바라봄 · 살펴봄 · 챙겨봄`)을 합친 말입니다. 혼자 약을 먹는 순간을
-가족, 복지사, 약국이 같이 바라보고 챙긴다는 의미를 담았습니다.
+고찌봄은 **제주 지역 독거 어르신을 우선 대상으로 하는 복약 안부 서비스**입니다. 약국이 QR로
+복약 정보를 등록하면 어르신은 큰 버튼과 사진으로 확인 기록을 남기고, 보호자·복지사는 확인이
+필요한 순간을 살펴봅니다.
 
-약국이 QR로 복약 정보를 등록하면 어르신은 알림을 보고 큰 버튼 한 번과 사진 한 장으로 복약을
-확인합니다. 백엔드는 이 과정에서 QR 기반 처방 조회, 복약 시간 관리, 복약 인증 기록 저장,
-보호자 보드 조회, 사진 업로드 URL 발급을 담당합니다. 고찌봄은 사람의 돌봄을 대체하지 않고,
-사람이 확인해야 할 순간을 더 빨리 발견하도록 돕는 것을 목표로 합니다.
-
----
-
-## 🧡 Service Boundary
-
-고찌봄은 의료 판단을 수행하지 않습니다.
-
-- 약을 추천하지 않습니다.
-- 처방을 변경하지 않습니다.
-- 사진을 의료적 증거로 단정하지 않습니다.
-- 미확인 상황은 ‘복용 실패’가 아니라 **확인 필요** 상태로 보호자·약사·돌봄 인력에게 연결합니다.
+5인 팀의 4일 MVP에서 **PM & Development Lead**로 제품 우선순위, FE/BE 계약, 백엔드
+아키텍처·DB/API·배포 인프라를 담당했습니다. 사용 경험과 시연 영상은
+[Frontend Repository](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-FE)에서 확인할 수 있습니다.
 
 ---
 
-## 🏗️ Backend Role
+## 🏗️ 백엔드 역할
 
 <p align="center">
   <img src="./docs/assets/gojjibom-flow.png" width="760" alt="고찌봄 서비스 플로우" />
 </p>
 
-BE는 다음 흐름을 안정적으로 처리하는 것을 목표로 합니다. 현재 구현된 API와 후속 로드맵은 아래
-API 표에서 구분합니다.
-
-| 단계 | Backend 책임 |
+| 흐름 | 백엔드 책임 |
 | --- | --- |
 | 케어그룹 | 어르신, 보호자, 가족, 사회복지사를 하나의 그룹으로 연결합니다. |
-| 처방 등록 | 약국이 등록한 처방·약·복약 스케줄을 저장합니다. |
-| 복약 이벤트 | 매일 복약 일정을 dose event로 생성하고 상태를 관리합니다. |
-| 복용 확인 | 버튼·음성·사진 기반 확인 결과를 기록합니다. |
-| 보호자 확인 | 보호자 보드에서 복약 상태와 확인 이력을 조회합니다. |
-| 보호자 알림 | 미확인·지연·확인 필요 상황을 알림함에 기록하고 stub provider로 발송 흐름을 검증합니다. |
+| 처방·복약 | 처방, 스케줄, 일자별 dose event와 사진 기반 확인 결과를 저장합니다. |
+| 보호자 조회 | 보호자 보드, 사진 갤러리와 확인 이력을 BFF로 제공합니다. |
+| 알림·미디어 | 미확인 상태를 기록하고 비공개 이미지용 presigned URL을 발급합니다. |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ 기술 스택
 
 | 영역 | 기술 |
 | --- | --- |
@@ -90,12 +73,12 @@ API 표에서 구분합니다.
 | API Docs | springdoc-openapi / Swagger UI |
 | Infra | Docker Compose, Nginx, Certbot, Let's Encrypt |
 | CI/CD | GitHub Actions → GHCR Image → EC2 Docker Compose |
-| Quality | ktlint, detekt, test, build |
+| Quality | ktlint, detekt, JUnit/Testcontainers, JaCoCo |
 | Media | AWS S3-compatible object storage, Presigned URL |
 
 ---
 
-## 🧩 Architecture
+## 🧩 아키텍처와 핵심 결정
 
 ```mermaid
 graph TD
@@ -112,253 +95,90 @@ graph TD
     Service --> ObjectStorage[AWS S3-compatible storage<br/>Images]
 ```
 
----
+### 4일 MVP의 FE/BE 계약 정렬
 
-## 📁 Project Structure
-
-```text
-.
-├── src/main/kotlin/xyz/stdiodh/gojjibom/
-│   └── ...                       # Spring Boot application code
-├── src/main/resources/
-│   ├── application.yml            # datasource, cors, swagger config
-│   └── db/migration/              # Flyway migration
-├── docs/
-│   ├── assets/                    # README images
-│   ├── ERD.md                     # 복약 안부 도메인 ERD
-│   └── PLAN.md                    # 백엔드 구현 계획서
-├── nginx/conf.d/                  # TLS reverse proxy config
-├── Dockerfile                     # multi-stage build
-├── docker-compose.yml             # local/base compose
-├── docker-compose.prod.yml        # production compose override
-├── init-letsencrypt.sh            # cert bootstrap
-├── .github/workflows/deploy.yml   # CI/CD
-├── build.gradle.kts
-└── settings.gradle.kts
-```
+이 일정에서 초기 16개 FE 라우트와 BE 계약의 간극을 분석해 BFF 집계 API 2개를 선택하고, `/api/v1`, 응답
+envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습니다. 자세한 판단과 구현 순서는
+[FE ↔ BE 싱크 계획서](./docs/archive/SYNC-PLAN.md)에 기록했습니다.
 
 ---
 
-## 🗄️ Domain Model
+## 🗄️ 핵심 도메인
 
-현재 마이그레이션과 코드에 존재하는 대표 모델은 다음과 같습니다.
+전체 테이블과 관계는 [ERD](./docs/ERD.md)에서 관리하며, README에는 주요 집합만 표시합니다.
 
-| Domain | 설명 |
+| 도메인 집합 | 책임 |
 | --- | --- |
-| `USERS` | 어르신, 보호자, 약사 공통 사용자 |
-| `CARE_GROUPS` | 한 어르신을 함께 보는 복약 안부 그룹 |
-| `CARE_GROUP_MEMBERS` | 대표 보호자, 가족, 사회복지사 등 참여자와 역할 |
-| `INVITE_LINKS` | 보호자·복지사 초대 링크 및 사용 횟수 관리 |
-| `PHARMACIES` | 처방 등록 주체인 약국 정보 |
-| `PRESCRIPTIONS` | 약국이 등록한 처방 정보 |
-| `MEDICATIONS` | 개별 약 정보와 사진 메타데이터 |
-| `DOSE_SCHEDULES` | 아침·점심·저녁·취침 전 등 복약 스케줄 |
-| `DOSE_SCHEDULE_ITEMS` | 복약 스케줄에 포함된 약 구성 |
-| `DOSE_EVENTS` | 일자별 실제 복약 이벤트와 확인 상태 |
-| `MEAL_TIMES` | 어르신별 식사 시간 기준 |
-| `CHANGE_LOG` | 케어그룹 설정 변경 이력 |
-| `NOTIFICATION_SETTINGS` | 어르신별 보호자 알림 설정 |
-| `NOTIFICATIONS` | 보호자·복지사 알림함과 발송 상태 |
-| `IMAGES` | 약 포지 사진 등 미디어 메타데이터 |
-| `TTS_CLIPS` | 복약 안내 음성 캐시용 스키마 |
+| 사용자·케어그룹 | 어르신과 보호자·복지사의 연결, 역할, 초대 링크를 관리합니다. |
+| 처방·약 | 약국이 등록한 처방과 개별 약 정보를 관리합니다. |
+| 스케줄·복약 이벤트 | 식사 기준 스케줄과 일자별 확인 상태를 관리합니다. |
+| 알림 | 보호자 설정, 확인 필요 알림과 발송 상태를 관리합니다. |
+| 미디어·변경 이력 | 약 봉지 사진 메타데이터와 주요 설정 변경을 기록합니다. |
 
 ---
 
-## 🔌 API Contract
+## 🔌 API 계약
 
-도메인 API(`/api/v1/**`) 응답은 공통 envelope 형식을 따릅니다. Health check(`/api/health`)는
-배포 검증용 단순 상태 응답입니다.
+도메인 API(`/api/v1/**`)는 `{ "data": ..., "error": ... }` 공통 envelope를 사용합니다.
+전체 계약과 요청·응답 스키마는 실행 중인 서버의 [Swagger UI](http://localhost:8080/swagger-ui/index.html)에서
+확인할 수 있습니다.
 
-```json
-{
-  "data": {},
-  "error": null
-}
-```
-
-```json
-{
-  "data": null,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "developer readable message"
-  }
-}
-```
-
-### 대표 API
-
-| 흐름 | Method | Endpoint | 현재 상태 |
+| 흐름 | Method | 대표 Endpoint | 현재 상태 |
 | --- | --- | --- | --- |
-| Health Check | GET | `/api/health` | 구현됨 |
-| OTP 인증 | POST | `/api/v1/auth/otp:request` | 구현됨 |
-| OTP 인증 | POST | `/api/v1/auth/otp:verify` | 구현됨 |
-| 사용자/보호자/어르신 연결 | POST | `/api/v1/care-groups` | 구현됨 |
-| 사용자/보호자/어르신 연결 | GET | `/api/v1/care-groups:lookup?seniorPhone=` | 구현됨 |
-| 사용자/보호자/어르신 연결 | GET | `/api/v1/care-groups/{id}` | 구현됨 |
-| 사용자/보호자/어르신 연결 | POST | `/api/v1/care-groups/{id}/invite-links` | 구현됨 |
-| 사용자/보호자/어르신 연결 | POST | `/api/v1/invites/{token}:accept` | 구현됨 |
-| 케어그룹 멤버 관리 | PATCH/DELETE | `/api/v1/care-groups/{id}/members/{memberId}` | 구현됨 |
-| 대표 보호자 이전 | PATCH | `/api/v1/care-groups/{id}/primary` | 구현됨 |
-| 변경 이력 조회 | GET | `/api/v1/care-groups/{id}/change-log` | 구현됨 |
-| 복약 알림 기준 관리 | GET/PUT | `/api/v1/seniors/{seniorId}/meal-times` | 구현됨 |
-| 복약 알림 정보 관리 | GET/PUT | `/api/v1/seniors/{seniorId}/notification-settings` | 구현됨 |
-| QR 기반 약 등록 | GET | `/api/v1/prescriptions:lookup?code=` | 구현됨 |
-| QR 기반 약 등록 | POST | `/api/v1/seniors/{seniorId}/prescriptions` | 구현됨 |
-| 처방 이력 조회 | GET | `/api/v1/seniors/{seniorId}/prescriptions` | 구현됨 |
-| 복약 스케줄 조회 | GET | `/api/v1/seniors/{seniorId}/dose-schedules` | 구현됨 |
-| 복약 이벤트 조회 | GET | `/api/v1/seniors/{seniorId}/doses?date=YYYY-MM-DD` | 구현됨 |
-| 복약 이벤트 조회 | GET | `/api/v1/dose-events/{id}` | 구현됨 |
-| 복약 인증 기록 저장 | POST | `/api/v1/dose-events/{id}:confirm` | 구현됨 |
-| 복약 사진 검토 | PATCH | `/api/v1/dose-events/{id}/photo:review` | 구현됨 |
+| OTP 데모 인증 | POST | `/api/v1/auth/otp:request`, `/api/v1/auth/otp:verify` | 데모 stub |
+| 케어그룹 연결 | POST | `/api/v1/care-groups` | 구현됨 |
+| QR 처방 조회 | GET | `/api/v1/prescriptions:lookup?code=` | 구현됨 |
+| 복약 확인 기록 저장 | POST | `/api/v1/dose-events/{id}:confirm` | 구현됨 |
 | 어르신 홈 BFF | GET | `/api/v1/senior/today?seniorId=` | 구현됨 |
-| 보호자 상태 확인 | GET | `/api/v1/care-groups/{id}/board` | 구현됨 |
-| 사진 갤러리 | GET | `/api/v1/care-groups/{id}/photos` | 구현됨 |
-| 사진 기반 인증 보조 | POST | `/api/v1/media/images/upload-url` | 구현됨 |
-| 사진 기반 인증 보조 | POST | `/api/v1/media/images` | 구현됨 |
-| 사진 기반 인증 보조 | GET | `/api/v1/media/images/{id}/view-url` | 구현됨 |
-| 보호자 알림 | GET | `/api/v1/seniors/{seniorId}/notifications` | 구현됨 |
-| 보호자 알림 | GET | `/api/v1/care-groups/{id}/notifications` | 구현됨 |
-| 보호자 알림 | PATCH | `/api/v1/notifications/{id}:read` | 구현됨 |
-
-카카오 알림톡과 SMS 외부 발송은 후속 provider 확장 대상입니다. 현재 기본 provider는 외부 I/O 없이
-로그로 발송 흐름을 검증하는 `stub`입니다.
+| 보호자 보드 BFF | GET | `/api/v1/care-groups/{id}/board` | 구현됨 |
 
 ---
 
-## ⚙️ Environment
+## 🚀 실행·검증·배포
+
+DB, CORS, 알림, S3와 presigned URL 설정은 `.env.example`을 기준으로 관리합니다.
 
 ```bash
 cp .env.example .env
-```
-
-대표 환경 변수는 다음과 같습니다.
-
-| 변수 | 설명 |
-| --- | --- |
-| `POSTGRES_DB` | Docker Compose PostgreSQL DB 이름 |
-| `POSTGRES_USER` | Docker Compose PostgreSQL 사용자명 |
-| `POSTGRES_PASSWORD` | Docker Compose PostgreSQL 비밀번호 |
-| `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL |
-| `SPRING_DATASOURCE_USERNAME` | DB 사용자명 |
-| `SPRING_DATASOURCE_PASSWORD` | DB 비밀번호 |
-| `APP_CORS_ALLOWED_ORIGINS` | 허용할 FE origin |
-| `APP_NOTIFICATIONS_MISSED_GRACE_MIN` | 미복용 판단 유예 시간 |
-| `APP_NOTIFICATIONS_PROVIDER` | 보호자 알림 provider, 기본값 `stub` |
-| `APP_NOTIFICATIONS_SCHEDULER_ENABLED` | 미복용 감지 스케줄러 활성화 여부 |
-| `APP_NOTIFICATIONS_SCHEDULER_FIXED_RATE_MS` | 미복용 감지 스케줄러 실행 주기 |
-| `AWS_REGION` | S3 region |
-| `AWS_S3_BUCKET` | 이미지 저장용 비공개 S3 bucket |
-| `AWS_S3_ENDPOINT` | S3-compatible endpoint, 선택값 |
-| `AWS_S3_PATH_STYLE_ACCESS` | S3-compatible storage의 path-style 접근 여부 |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | 정적 AWS credential, EC2 IAM role을 쓰지 않을 때만 사용 |
-| `APP_MEDIA_MAX_IMAGE_BYTES` | 업로드 가능한 이미지 최대 크기 |
-| `APP_MEDIA_UPLOAD_URL_TTL_SECONDS` | 업로드 presigned URL 만료 시간 |
-| `APP_MEDIA_VIEW_URL_TTL_SECONDS` | 조회 presigned URL 만료 시간 |
-
----
-
-## 🚀 Local Development
-
-PostgreSQL을 Docker로 실행한 뒤 Spring Boot를 실행합니다. 아래 값은 `application.yml`의 로컬 기본 DB
-접속값과 맞춘 예시입니다.
-
-```bash
 POSTGRES_DB=gojjibom POSTGRES_USER=gojjibom POSTGRES_PASSWORD=gojjibom docker compose up -d postgres
 ./gradlew bootRun
-```
-
-`.env`를 사용하는 경우 `POSTGRES_PASSWORD`와 `SPRING_DATASOURCE_PASSWORD`가 서로 맞아야 합니다.
-
-Health check:
-
-```bash
 curl http://localhost:8080/api/health
+./gradlew clean ktlintCheck detekt test jacocoTestReport jacocoTestCoverageVerification build --no-daemon
 ```
 
----
+### 테스트 품질 게이트
 
-## ✅ Quality Gate
+- 전체 테스트: 103 passed, 0 failed, 0 errors, 0 skipped
+- `src/main/kotlin` LINE: 2,243 / 2,336
+- `src/main/kotlin` BRANCH: 388 / 575
+- JaCoCo gate: LINE `0.95`, BRANCH `0.65`
+- 보고서: `build/reports/jacoco/test/html/index.html`
 
-```bash
-./gradlew ktlintCheck detekt test build
-```
-
----
-
-## 🚢 Deploy & Operate
-
-운영 배포 흐름은 다음과 같습니다.
-
-```mermaid
-flowchart LR
-    A[main push] --> B[GitHub Actions]
-    B --> C[ktlint/detekt/test/build]
-    C --> D[Docker image build]
-    D --> E[Push to GHCR]
-    E --> F[EC2 pull]
-    F --> G[docker compose up]
-    G --> H[Nginx TLS]
-```
-
-운영 서버에서는 Nginx가 TLS를 종료하고 Spring Boot API로 reverse proxy합니다.
+PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검증합니다. `main` 검증이 끝난
+뒤에만 Docker 이미지를 GHCR에 게시하고 기존 EC2 배포를 실행합니다. 테스트 범위와 남은 위험은
+[테스트 및 커버리지 문서](./docs/TESTING.md)에 기록합니다.
 
 ---
 
-## 🔐 Security & Privacy Principles
-
-| 원칙 | 설명 |
-| --- | --- |
-| 개인정보 최소 수집 | 복약 안부에 필요한 정보만 저장합니다. |
-| QR 토큰화 | QR에는 개인정보를 직접 담지 않고 서버에서 권한 확인 후 조회합니다. |
-| 그룹 기반 인가 | 케어그룹 멤버만 어르신 데이터에 접근할 수 있도록 설계합니다. |
-| 로그 마스킹 | 전화번호, 토큰, 인증 정보 등은 원문 로그에 남기지 않습니다. |
-| 사진 비공개 저장 | 약 포지 사진은 비공개 버킷과 짧은 만료의 presigned URL로 제공하는 것을 목표로 합니다. |
-
----
-
-## ⚠️ Known Limits & Response
+## ⚠️ MVP 검증 경계
 
 <p align="center">
   <img src="./docs/assets/gojjibom-limitations.png" width="760" alt="고찌봄 한계와 보완 구상" />
 </p>
 
-| 한계 | 대응 방향 |
+| 경계 | 현재 구현과 후속 과제 |
 | --- | --- |
-| 약국 QR 활성화 필요 | 거점 약국·보건소 시범사업부터 단계 도입 |
-| 사진이 복용을 100% 증명하지 못함 | ‘확인 필요’ 상태로 보호자·약사에게 연결 |
-| 알림 벤더 장애 가능성 | 보호자 알림함과 외부 발송 provider를 별도 로드맵으로 설계 |
-| 서버 장애 가능성 | 앱 로컬 알림과 서버 복구 후 동기화 구조로 보완 |
-| 개인정보 위험 | QR 토큰화, 권한 분리, 접근 로그, 비공개 미디어 저장 |
+| 의료 판단 | 약을 추천·변경하지 않으며 사진을 복용 증거로 단정하지 않습니다. 미확인은 **확인 필요** 상태로 연결합니다. |
+| 인증·세션 | OTP 요청은 SMS를 발송하지 않고, 검증은 임의의 6자리 숫자를 승인하는 데모 stub입니다. JWT·세션은 후속 과제입니다. |
+| 접근 통제 | 일부 변경 API만 `actorUserId`와 멤버십을 대조합니다. QR lookup과 BFF 조회는 운영 전 인증 주체 기반 인가가 필요합니다. |
+| 개인정보·사진 | 등록 코드에 개인정보를 넣지 않고 비공개 버킷과 단기 presigned URL을 사용합니다. 인증·감사 로그는 보강이 필요합니다. |
+| 외부 알림 | 기본 provider는 로그만 남기는 stub이며 카카오 알림톡·SMS 연동은 후속 과제입니다. |
+| 장애 대응 | 실제 백그라운드 푸시와 서버 복구 후 동기화는 구현 범위 밖입니다. |
 
 ---
 
-## 🧭 Roadmap
-
-| 단계 | 목표 |
-| --- | --- |
-| 현재 구현 | Health, CORS, CI/CD, TLS, DB/Flyway, 케어그룹, 초대 링크, 처방·스케줄, dose event, 식사 시간, 알림 설정, 미복용 감지, 보호자 알림함, 보호자 보드, 사진 갤러리, S3 이미지 presigned URL |
-| 후속 확장 | 카카오 알림톡/SMS provider, 재알림·에스컬레이션 고도화, TTS 안내 음성, 권한 강화, 관측성, 성능 최적화 |
-
----
-
-## 👥 Team
-
-| 이름 | 역할 | 담당 |
-| --- | --- | --- |
-| 김주영 | 팀장 | 서비스 방향성 검토, 리스크 피드백 |
-| 허동현 | PM & Development Lead | 백엔드 아키텍처, DB/API 설계, 배포 인프라 총괄 |
-| 박윤아 | Presentation & Research | 발표 준비, 자료조사, 대본 구성 |
-| 강지연 | UX/UI Design | 브랜드·화면 디자인 |
-| 이재영 | Research & Evidence | 통계 근거 정리, TTS 자료 준비 |
-
----
-
-## 🏁 Goal
+## 🏁 기대 효과
 
 <p align="center">
   <img src="./docs/assets/gojjibom-impact.png" width="760" alt="고찌봄 기대 효과" />
 </p>
-
-고찌봄 백엔드는 복약 데이터를 단순히 저장하는 서버가 아니라,
-**약국-가족-지역사회가 함께 어르신의 안부를 확인하는 연결망**을 만드는 것을 목표로 합니다.

@@ -31,7 +31,11 @@ class CaregiverRecipientResolver(
 ) {
     fun resolve(careGroupId: Long): CaregiverRecipient? {
         val primary = members.findByCareGroupIdAndIsPrimaryTrue(careGroupId)
-        if (primary != null && primary.status == MemberStatus.ACTIVE) {
+        if (
+            primary != null &&
+            primary.status == MemberStatus.ACTIVE &&
+            primary.role != CareGroupRole.SOCIAL_WORKER
+        ) {
             return primary.toRecipient()
         }
 

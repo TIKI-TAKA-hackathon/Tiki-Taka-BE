@@ -111,6 +111,9 @@ class DoseService(
         if (event.photoImageId == null) {
             throw DoseErrors.badRequest("DOSE_EVENT_PHOTO_REQUIRED", "Dose event has no photo to review")
         }
+        if (event.photoReviewStatus != PhotoReviewStatus.PENDING) {
+            throw DoseErrors.conflict("PHOTO_ALREADY_REVIEWED", "Dose event photo has already been reviewed")
+        }
     }
 
     private fun seniorOrThrow(seniorId: Long) {

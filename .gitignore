@@ -1,5 +1,6 @@
 # Gradle / build
 .gradle/
+.kotlin/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
@@ -19,3 +20,7 @@ certbot/www/
 
 # review loop scratch
 .review/
+
+# local Claude/Codex workspace state
+.claude/settings.local.json
+.claude/worktrees/

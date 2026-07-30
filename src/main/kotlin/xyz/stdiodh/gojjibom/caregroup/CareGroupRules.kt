@@ -112,6 +112,7 @@ object CareGroupRules {
                 existingMember.status = MemberStatus.PENDING
                 existingMember.invitedBy = invite.createdBy
                 existingMember.joinedAt = null
+                existingMember.isPrimary = false
                 existingMember
             }
 

@@ -45,7 +45,11 @@ class SeniorDayAssembler(
         return Dose(
             id = event.requiredId().toString(),
             label = schedule.label,
-            time = event.scheduledAt.toLocalTime().format(TIME_FORMAT),
+            time =
+                event.scheduledAt
+                    .atZoneSameInstant(PresentationFormat.ZONE)
+                    .toLocalTime()
+                    .format(TIME_FORMAT),
             mealTag = PresentationFormat.mealTag(schedule.mealRelation, schedule.mealOffsetMin, schedule.slot),
             pillCount = schedule.pillCount ?: 0,
             packetNo = schedule.packetNo ?: 0,
