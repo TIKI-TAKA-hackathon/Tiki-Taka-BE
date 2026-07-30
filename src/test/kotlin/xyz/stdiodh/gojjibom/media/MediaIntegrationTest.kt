@@ -2,6 +2,7 @@ package xyz.stdiodh.gojjibom.media
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -112,6 +113,85 @@ class MediaIntegrationTest {
     }
 
     @Test
+    fun `image upload normalizes and accepts jpeg png and webp content types`() {
+        val cases =
+            listOf(
+                Triple(" IMAGE/JPEG ", "image/jpeg", ".jpg"),
+                Triple("image/png", "image/png", ".png"),
+                Triple("image/webp", "image/webp", ".webp"),
+            )
+
+        cases.forEachIndexed { index, (requestType, normalizedType, extension) ->
+            val member = createActiveMember("allowed-$index")
+            val upload =
+                mockMvc
+                    .perform(
+                        post("/api/v1/media/images/upload-url")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(
+                                imageUploadUrlBody(
+                                    actorUserId = member.actorUserId,
+                                    careGroupId = member.careGroupId,
+                                    contentType = requestType,
+                                ),
+                            ),
+                    ).andExpect(status().isCreated)
+                    .andReturn()
+                    .dataNode()
+
+            assertThat(upload.path("objectKey").asText()).startsWith("images/${member.careGroupId}/")
+            assertThat(upload.path("objectKey").asText()).endsWith(extension)
+            assertThat(upload.path("requiredHeaders").path("content-type").asText()).isEqualTo(normalizedType)
+
+            mockMvc
+                .perform(
+                    post("/api/v1/media/images")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            registerImageBody(
+                                member = member,
+                                objectKey = upload.path("objectKey").asText(),
+                                contentType = requestType,
+                            ),
+                        ),
+                ).andExpect(status().isCreated)
+                .andExpect(jsonPath("$.data.contentType").value(normalizedType))
+        }
+    }
+
+    @Test
+    fun `image upload accepts exact maximum size and rejects one byte over`() {
+        val member = createActiveMember("size-boundary")
+
+        mockMvc
+            .perform(
+                post("/api/v1/media/images/upload-url")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        imageUploadUrlBody(
+                            actorUserId = member.actorUserId,
+                            careGroupId = member.careGroupId,
+                            sizeBytes = 1024,
+                        ),
+                    ),
+            ).andExpect(status().isCreated)
+
+        mockMvc
+            .perform(
+                post("/api/v1/media/images/upload-url")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        imageUploadUrlBody(
+                            actorUserId = member.actorUserId,
+                            careGroupId = member.careGroupId,
+                            sizeBytes = 1025,
+                        ),
+                    ),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("IMAGE_TOO_LARGE"))
+    }
+
+    @Test
     fun `image registration stores metadata and returns view url`() {
         val member = createActiveMember("register")
         val upload = createImageUploadUrl(member)
@@ -164,6 +244,55 @@ class MediaIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("IMAGE_OBJECT_KEY_DENIED"))
     }
 
+    @Test
+    fun `image registration rejects an object key outside the care group prefix`() {
+        val member = createActiveMember("register-prefix")
+        val otherGroup = createActiveMember("register-prefix-other", actorUserId = member.actorUserId)
+
+        mockMvc
+            .perform(
+                post("/api/v1/media/images")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        registerImageBody(
+                            member = member,
+                            objectKey = "images/${otherGroup.careGroupId}/forged.jpg",
+                        ),
+                    ),
+            ).andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error.code").value("IMAGE_OBJECT_KEY_DENIED"))
+    }
+
+    @Test
+    fun `duplicate image object key returns conflict and keeps one row`() {
+        val member = createActiveMember("duplicate-key")
+        val objectKey = "images/${member.careGroupId}/duplicate.jpg"
+        val request =
+            post("/api/v1/media/images")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(registerImageBody(member = member, objectKey = objectKey))
+
+        mockMvc
+            .perform(request)
+            .andExpect(status().isCreated)
+
+        mockMvc
+            .perform(
+                post("/api/v1/media/images")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(registerImageBody(member = member, objectKey = objectKey)),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("IMAGE_ALREADY_REGISTERED"))
+
+        val rowCount =
+            jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM images WHERE object_key = ?",
+                Long::class.java,
+                objectKey,
+            )
+        assertThat(rowCount).isEqualTo(1L)
+    }
+
     private fun createImageUploadUrl(member: TestMember): JsonNode =
         mockMvc
             .perform(
@@ -195,6 +324,7 @@ class MediaIntegrationTest {
     private fun registerImageBody(
         member: TestMember,
         objectKey: String,
+        contentType: String = "image/jpeg",
     ): String =
         """
         {
@@ -203,7 +333,7 @@ class MediaIntegrationTest {
           "ownerType": "MEDICATION",
           "ownerId": 10,
           "objectKey": "$objectKey",
-          "contentType": "image/jpeg",
+          "contentType": "$contentType",
           "sizeBytes": 512
         }
         """.trimIndent()

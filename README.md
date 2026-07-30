@@ -73,7 +73,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 | API Docs | springdoc-openapi / Swagger UI |
 | Infra | Docker Compose, Nginx, Certbot, Let's Encrypt |
 | CI/CD | GitHub Actions → GHCR Image → EC2 Docker Compose |
-| Quality | ktlint, detekt, test, build |
+| Quality | ktlint, detekt, JUnit/Testcontainers, JaCoCo |
 | Media | AWS S3-compatible object storage, Presigned URL |
 
 ---
@@ -143,11 +143,20 @@ cp .env.example .env
 POSTGRES_DB=gojjibom POSTGRES_USER=gojjibom POSTGRES_PASSWORD=gojjibom docker compose up -d postgres
 ./gradlew bootRun
 curl http://localhost:8080/api/health
-./gradlew ktlintCheck detekt test build
+./gradlew clean ktlintCheck detekt test jacocoTestReport jacocoTestCoverageVerification build --no-daemon
 ```
 
-`main` push 시 GitHub Actions가 품질 검증과 Docker 이미지 빌드를 수행하고 GHCR에 게시합니다.
-EC2는 이미지를 받아 Docker Compose로 실행하며 Nginx가 TLS를 종료합니다.
+### 테스트 품질 게이트
+
+- 전체 테스트: 103 passed, 0 failed, 0 errors, 0 skipped
+- `src/main/kotlin` LINE: 2,243 / 2,336
+- `src/main/kotlin` BRANCH: 388 / 575
+- JaCoCo gate: LINE `0.95`, BRANCH `0.65`
+- 보고서: `build/reports/jacoco/test/html/index.html`
+
+PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검증합니다. `main` 검증이 끝난
+뒤에만 Docker 이미지를 GHCR에 게시하고 기존 EC2 배포를 실행합니다. 테스트 범위와 남은 위험은
+[테스트 및 커버리지 문서](./docs/TESTING.md)에 기록합니다.
 
 ---
 

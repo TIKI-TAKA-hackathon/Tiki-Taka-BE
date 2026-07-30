@@ -120,6 +120,46 @@ class PhotoGalleryIntegrationTest {
     }
 
     @Test
+    fun `reviewed photo cannot be reviewed again`() {
+        val fixture = confirmedPhotoDose()
+
+        mockMvc
+            .perform(
+                patch("/api/v1/dose-events/${fixture.doseEventId}/photo:review")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(reviewBody(fixture.ownerUserId, "REVIEWED")),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.photoReviewStatus").value("REVIEWED"))
+
+        mockMvc
+            .perform(
+                patch("/api/v1/dose-events/${fixture.doseEventId}/photo:review")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(reviewBody(fixture.ownerUserId, "FLAGGED")),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("PHOTO_ALREADY_REVIEWED"))
+    }
+
+    @Test
+    fun `pending is not a valid photo review decision`() {
+        val fixture = confirmedPhotoDose()
+
+        mockMvc
+            .perform(
+                patch("/api/v1/dose-events/${fixture.doseEventId}/photo:review")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(reviewBody(fixture.ownerUserId, "PENDING")),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("INVALID_REVIEW_STATUS"))
+
+        mockMvc
+            .perform(
+                get("/api/v1/care-groups/${fixture.groupId}/photos").param("to", doseDate),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.photos[0].reviewStatus").value("pending"))
+    }
+
+    @Test
     fun `review photo requires active care group membership`() {
         val fixture = confirmedPhotoDose()
         val stranger =

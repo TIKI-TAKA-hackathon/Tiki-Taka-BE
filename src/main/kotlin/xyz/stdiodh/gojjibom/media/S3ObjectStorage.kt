@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.s3.model.ServerSideEncryption
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
+import java.time.Clock
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -18,6 +19,7 @@ class S3ObjectStorage(
     private val properties: AwsStorageProperties,
     private val s3Client: S3Client,
     private val s3Presigner: S3Presigner,
+    private val clock: Clock,
 ) : ObjectStorage {
     override fun presignUpload(
         objectKey: String,
@@ -99,5 +101,6 @@ class S3ObjectStorage(
                 "Object storage bucket is not configured",
             )
 
-    private fun expiresAt(ttlSeconds: Long): OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC).plusSeconds(ttlSeconds)
+    private fun expiresAt(ttlSeconds: Long): OffsetDateTime =
+        OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).plusSeconds(ttlSeconds)
 }

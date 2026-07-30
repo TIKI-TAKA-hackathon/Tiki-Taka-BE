@@ -97,7 +97,11 @@ class CaregiverBoardAssembler(
     private fun toConfirmLog(event: DoseEventEntity): ConfirmLog {
         val detail =
             event.confirmedAt?.let { confirmedAt ->
-                val time = PresentationFormat.clockLabel(confirmedAt.toLocalTime())
+                val localTime =
+                    confirmedAt
+                        .atZoneSameInstant(PresentationFormat.ZONE)
+                        .toLocalTime()
+                val time = PresentationFormat.clockLabel(localTime)
                 val method = PresentationFormat.methodKorean(event.confirmMethod)
                 if (method.isNotBlank()) "$time · $method" else time
             }

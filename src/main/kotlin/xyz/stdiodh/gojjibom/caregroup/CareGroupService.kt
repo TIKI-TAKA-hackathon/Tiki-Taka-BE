@@ -21,6 +21,10 @@ class CareGroupService(
 ) {
     @Transactional
     fun createCareGroup(request: CreateCareGroupRequest): CareGroupResponse {
+        if (request.senior.phone.trim() == request.owner.phone.trim()) {
+            throw CareGroupErrors.badRequest("INVALID_OWNER", "Senior and owner must be different users")
+        }
+
         val senior =
             findOrCreateUser(
                 name = request.senior.name,
@@ -41,10 +45,6 @@ class CareGroupService(
                 userType = UserType.CAREGIVER,
                 birthDate = null,
             )
-
-        if (senior.requiredId() == owner.requiredId()) {
-            throw CareGroupErrors.badRequest("INVALID_OWNER", "Senior and owner must be different users")
-        }
 
         val now = now()
         val group =

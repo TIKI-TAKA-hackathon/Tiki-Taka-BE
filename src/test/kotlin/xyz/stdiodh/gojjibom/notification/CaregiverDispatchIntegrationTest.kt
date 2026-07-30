@@ -2,6 +2,7 @@ package xyz.stdiodh.gojjibom.notification
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -68,6 +69,7 @@ class CaregiverDispatchIntegrationTest {
         )
 
         val sent = mutableListOf<Sent>()
+        var shouldSucceed: Boolean = true
 
         override fun dispatch(
             targetPhone: String,
@@ -76,7 +78,7 @@ class CaregiverDispatchIntegrationTest {
         ): DispatchResult {
             sent += Sent(targetPhone, targetName, notification.id, notification.type)
             return DispatchResult(
-                success = true,
+                success = shouldSucceed,
                 channel = DispatchChannel.STUB,
                 target = DispatchRenderer.renderTarget(targetPhone),
             )
@@ -108,6 +110,12 @@ class CaregiverDispatchIntegrationTest {
 
     private val doseDate = "2026-07-02"
     private val scheduledAt = OffsetDateTime.of(2026, 7, 2, 8, 30, 0, 0, ZoneOffset.ofHours(9))
+
+    @BeforeEach
+    fun resetSender() {
+        recordingSender.sent.clear()
+        recordingSender.shouldSucceed = true
+    }
 
     @Test
     fun `escalation dispatches to the primary caregiver and stamps dispatch fields`() {
@@ -173,6 +181,25 @@ class CaregiverDispatchIntegrationTest {
         assertThat(sentTo(ownerPhone)).isEmpty()
         assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId)).isEmpty()
         assertThat(doseEvents.findById(eventId).orElseThrow().status).isEqualTo(DoseEventStatus.SCHEDULED)
+    }
+
+    @Test
+    fun `sender failure does not stamp successful dispatch fields`() {
+        val group = createGroupWithDoseEvent(remindIntervalMin = 5, maxRetries = 3)
+        generateEventId(group.seniorUserId)
+        val ownerPhone = users.findById(group.ownerUserId).orElseThrow().phone
+        recordingSender.shouldSucceed = false
+
+        evaluator.evaluate(scheduledAt.plusMinutes(12))
+
+        assertThat(sentTo(ownerPhone)).hasSize(3)
+        assertThat(notifications.findBySeniorIdOrderByCreatedAtDescIdDesc(group.seniorUserId))
+            .hasSize(3)
+            .allSatisfy { row ->
+                assertThat(row.dispatchedAt).isNull()
+                assertThat(row.dispatchTarget).isNull()
+                assertThat(row.dispatchChannel).isNull()
+            }
     }
 
     /** Dispatches recorded for a specific caregiver phone (evaluate() is global across groups). */

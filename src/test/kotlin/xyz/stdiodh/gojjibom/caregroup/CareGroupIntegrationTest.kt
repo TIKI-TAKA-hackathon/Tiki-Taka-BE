@@ -52,6 +52,9 @@ class CareGroupIntegrationTest {
     @Autowired
     private lateinit var inviteLinks: InviteLinkRepository
 
+    @Autowired
+    private lateinit var members: CareGroupMemberRepository
+
     @Test
     fun `create care group creates senior and active owner membership`() {
         val group = createCareGroup("create")
@@ -152,6 +155,107 @@ class CareGroupIntegrationTest {
     }
 
     @Test
+    fun `invite acceptance rejects the OWNER role`() {
+        val group = createCareGroup("invite-owner")
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+
+        mockMvc
+            .perform(
+                post("/api/v1/invites/$token:accept")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(inviteAcceptBody("invite-owner", role = "OWNER")),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("INVALID_MEMBER_ROLE"))
+
+        assertThat(inviteLinks.findByToken(token)?.useCount).isZero()
+        assertThat(members.findByCareGroupIdOrderByIdAsc(group.groupId)).hasSize(1)
+    }
+
+    @Test
+    fun `pending member cannot accept another invite to the same care group`() {
+        val group = createCareGroup("pending-duplicate")
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 2)
+        acceptInvite(token, "pending-duplicate")
+
+        mockMvc
+            .perform(
+                post("/api/v1/invites/$token:accept")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(inviteAcceptBody("pending-duplicate", role = "FAMILY")),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("MEMBER_ALREADY_EXISTS"))
+
+        assertThat(inviteLinks.findByToken(token)?.useCount).isEqualTo(1)
+        assertThat(members.findByCareGroupIdOrderByIdAsc(group.groupId)).hasSize(2)
+    }
+
+    @Test
+    fun `active member cannot accept another invite to the same care group`() {
+        val group = createCareGroup("active-duplicate")
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 2)
+        val member = acceptInvite(token, "active-duplicate")
+        activateMember(group, member.path("id").asLong())
+
+        mockMvc
+            .perform(
+                post("/api/v1/invites/$token:accept")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(inviteAcceptBody("active-duplicate", role = "FAMILY")),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error.code").value("MEMBER_ALREADY_EXISTS"))
+
+        assertThat(inviteLinks.findByToken(token)?.useCount).isEqualTo(1)
+        assertThat(members.findByCareGroupIdOrderByIdAsc(group.groupId)).hasSize(2)
+    }
+
+    @Test
+    fun `removed member rejoins as the same non primary pending row`() {
+        val group = createCareGroup("removed-rejoin")
+        val firstToken = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+        val original = acceptInvite(firstToken, "removed-rejoin")
+        val memberId = original.path("id").asLong()
+        activateMember(group, memberId)
+
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/primary")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"actorUserId": ${group.ownerUserId}, "memberId": $memberId}"""),
+            ).andExpect(status().isOk)
+
+        mockMvc
+            .perform(
+                delete("/api/v1/care-groups/${group.groupId}/members/$memberId")
+                    .param("actorUserId", group.ownerUserId.toString()),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.status").value("REMOVED"))
+
+        val secondToken = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+        val rejoinedResult =
+            mockMvc
+                .perform(
+                    post("/api/v1/invites/$secondToken:accept")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(inviteAcceptBody("removed-rejoin", role = "SOCIAL_WORKER")),
+                ).andExpect(status().isCreated)
+                .andReturn()
+        val rejoined = rejoinedResult.dataNode()
+
+        assertThat(rejoined.path("id").asLong()).isEqualTo(memberId)
+        assertThat(rejoined.path("status").asText()).isEqualTo("PENDING")
+        assertThat(rejoined.path("role").asText()).isEqualTo("SOCIAL_WORKER")
+        assertThat(rejoined.path("joinedAt").isNull).isTrue()
+        assertThat(rejoined.path("isPrimary").asBoolean()).isFalse()
+
+        val persisted = members.findByIdAndCareGroupId(memberId, group.groupId)
+        assertThat(persisted?.status).isEqualTo(MemberStatus.PENDING)
+        assertThat(persisted?.role).isEqualTo(CareGroupRole.SOCIAL_WORKER)
+        assertThat(persisted?.joinedAt).isNull()
+        assertThat(persisted?.isPrimary).isFalse()
+        assertThat(members.findByCareGroupIdOrderByIdAsc(group.groupId)).hasSize(2)
+    }
+
+    @Test
     fun `owner member cannot be removed`() {
         val group = createCareGroup("owner-remove")
 
@@ -161,6 +265,42 @@ class CareGroupIntegrationTest {
                     .param("actorUserId", group.ownerUserId.toString()),
             ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error.code").value("OWNER_MEMBER_IMMUTABLE"))
+    }
+
+    @Test
+    fun `owner membership cannot be patched`() {
+        val group = createCareGroup("owner-patch")
+
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/members/${group.ownerMemberId}")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "actorUserId": ${group.ownerUserId},
+                          "status": "ACTIVE",
+                          "role": "FAMILY"
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("OWNER_MEMBER_IMMUTABLE"))
+    }
+
+    @Test
+    fun `non owner member cannot be promoted to OWNER`() {
+        val group = createCareGroup("promote-owner")
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+        val member = acceptInvite(token, "promote-owner")
+
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/members/${member.path("id").asLong()}")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"actorUserId": ${group.ownerUserId}, "role": "OWNER"}"""),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("INVALID_MEMBER_ROLE"))
     }
 
     @Test
@@ -244,6 +384,138 @@ class CareGroupIntegrationTest {
                 .filter { it.path("isPrimary").asBoolean() }
                 .map { it.path("id").asLong() }
         assertThat(primaryMemberIds).containsExactly(familyMemberId)
+    }
+
+    @Test
+    fun `pending member cannot become the primary caregiver`() {
+        val group = createCareGroup("pending-primary")
+        val token = createInviteToken(group.ownerUserId, group.groupId, maxUses = 1)
+        val pending = acceptInvite(token, "pending-primary")
+
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/primary")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "actorUserId": ${group.ownerUserId},
+                          "memberId": ${pending.path("id").asLong()}
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error.code").value("INVALID_PRIMARY_TARGET"))
+
+        val persistedMembers = members.findByCareGroupIdOrderByIdAsc(group.groupId)
+        assertThat(persistedMembers.single { it.id == group.ownerMemberId }.isPrimary).isTrue()
+        assertThat(persistedMembers.single { it.id == pending.path("id").asLong() }.isPrimary).isFalse()
+    }
+
+    @Test
+    fun `senior and owner with the same phone are rejected as an invalid owner`() {
+        val result =
+            mockMvc
+                .perform(
+                    post("/api/v1/care-groups")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {
+                              "name": "Same phone group",
+                              "senior": {
+                                "name": "Same phone senior",
+                                "phone": "010-same-phone-0001",
+                                "birthDate": "1940-01-01"
+                              },
+                              "owner": {
+                                "name": "Same phone owner",
+                                "phone": "010-same-phone-0001"
+                              }
+                            }
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isBadRequest)
+                .andReturn()
+
+        result.errorNode("INVALID_OWNER")
+    }
+
+    @Test
+    fun `malformed JSON returns the common error envelope`() {
+        val result =
+            mockMvc
+                .perform(
+                    post("/api/v1/care-groups")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{"),
+                ).andExpect(status().isBadRequest)
+                .andReturn()
+
+        val error = result.errorNode("INVALID_REQUEST")
+        assertThat(error.path("message").asText()).isEqualTo("Invalid request body")
+    }
+
+    @Test
+    fun `missing request parameter returns the common error envelope`() {
+        val result =
+            mockMvc
+                .perform(get("/api/v1/care-groups:lookup"))
+                .andExpect(status().isBadRequest)
+                .andReturn()
+
+        val error = result.errorNode("INVALID_REQUEST")
+        assertThat(error.path("message").asText()).isEqualTo("Missing request parameter: seniorPhone")
+    }
+
+    @Test
+    fun `bean validation failure returns the common error envelope`() {
+        val result =
+            mockMvc
+                .perform(
+                    post("/api/v1/care-groups")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """
+                            {
+                              "name": " ",
+                              "senior": {
+                                "name": "Validation senior",
+                                "phone": "010-validation-0001",
+                                "birthDate": "1940-01-01"
+                              },
+                              "owner": {
+                                "name": "Validation owner",
+                                "phone": "010-validation-0002"
+                              }
+                            }
+                            """.trimIndent(),
+                        ),
+                ).andExpect(status().isBadRequest)
+                .andReturn()
+
+        val error = result.errorNode("INVALID_REQUEST")
+        assertThat(error.path("message").asText()).contains("name")
+    }
+
+    private fun activateMember(
+        group: CreatedGroup,
+        memberId: Long,
+    ) {
+        mockMvc
+            .perform(
+                patch("/api/v1/care-groups/${group.groupId}/members/$memberId")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "actorUserId": ${group.ownerUserId},
+                          "status": "ACTIVE",
+                          "role": "FAMILY"
+                        }
+                        """.trimIndent(),
+                    ),
+            ).andExpect(status().isOk)
     }
 
     private fun approveActiveFamily(
@@ -385,6 +657,17 @@ class CareGroupIntegrationTest {
 
     private fun org.springframework.test.web.servlet.MvcResult.dataNode(): JsonNode =
         objectMapper.readTree(response.contentAsString).path("data")
+
+    private fun org.springframework.test.web.servlet.MvcResult.errorNode(expectedCode: String): JsonNode {
+        val root = objectMapper.readTree(response.contentAsString)
+        assertThat(root.has("data")).isTrue()
+        assertThat(root.path("data").isNull).isTrue()
+        assertThat(root.has("error")).isTrue()
+        assertThat(root.path("error").isObject).isTrue()
+        assertThat(root.path("error").path("code").asText()).isEqualTo(expectedCode)
+        assertThat(root.path("error").path("message").asText()).isNotBlank()
+        return root.path("error")
+    }
 
     private data class CreatedGroup(
         val groupId: Long,
