@@ -1,5 +1,9 @@
 # Frontend/backend coverage checklist
 
+> Archived checklist. The PR labels and planned phases below reflect an earlier
+> implementation snapshot and are not the current backend source of truth.
+> Use the root `README.md`, `docs/ERD.md`, and `src/main/resources/db/migration/`.
+
 This checklist tracks the Firebase frontend at `https://gojjibom.web.app` against backend
 data and APIs. The frontend is currently mock-data driven and shows `https://api.stdiodh.xyz/api`
 as the API base. Backend paths below assume the frontend calls `/api/v1/...`.

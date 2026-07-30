@@ -159,7 +159,7 @@ erDiagram
     USERS ||--o{ IMAGES : "uploads"
     TTS_CLIPS {
         bigint id PK
-        string text_hash "unique per (voice, text)"
+        string text_hash "legacy; runtime unused"
         string voice
         string text
         string object_key
@@ -195,7 +195,7 @@ erDiagram
 - **ESCALATION_POLICIES** `[LATER]` — 재알림·에스컬레이션 정책(1차 +5분, 2차 10분, 3차 15분 → 에스컬레이션). 그룹 단위 설정. (확인 필요 카드)
 - **ESCALATION_EVENTS** `[LATER]` — 실제 에스컬레이션/재알림 로그 = "타임라인 보기". 미확인 시 보호자 알림·전화 유도. (확인 필요 카드)
 - **NOTIFICATIONS** `[LATER]` — 보호자/복지사 알림함(미복용·에스컬레이션·참여 요청·재처방 임박 등). (전반)
-- **TTS_CLIPS** `[LATER/Phase 5]` — 복약 안내 음성 캐시. 문장 해시로 재사용, MP3는 오브젝트 스토리지. 엔진 Kokoro(Apache-2.0). (어르신 안내 음성)
+- **TTS_CLIPS** `[LEGACY/UNUSED]` — V5 마이그레이션이 만든 과거 음성 캐시 테이블. Kokoro worker와 TTS API는 제거됐고 현재 런타임은 이 테이블을 읽거나 쓰지 않는다. 안내 음성은 FE 정적 MP3로 제공한다.
 - **IMAGES** `[LATER/Phase 5]` — 카메라 이미지(약/봉지 사진 등). 비공개 버킷 + presigned URL, DB엔 object_key만. (약 사진 보기)
 
 ## 설계 노트
@@ -206,6 +206,7 @@ erDiagram
   진단성 표현을 넣지 않음.
 - **개인정보 최소화**: 전화번호 등 민감정보는 응답/로그에 노출하지 않음(마스킹). PII는 필요한 화면에만.
 - **시간대**: 복약 시각은 Asia/Seoul 기준. `scheduled_at`은 timestamptz로 저장.
-- **미디어 저장(Phase 5)**: TTS MP3·이미지는 오브젝트 스토리지(S3/MinIO)에 저장하고 DB엔 `object_key`만 둔다.
-  이미지는 비공개 버킷 + presigned URL, 케어그룹 멤버십으로 인가. `MEDICATIONS.photo_url`은 `IMAGES`/`object_key`로 대체 가능.
+- **미디어 저장(Phase 5)**: 현재 BE는 이미지만 오브젝트 스토리지(S3/MinIO)에 저장하고 DB에는 `object_key`만 둔다.
+  이미지는 비공개 버킷 + presigned URL, 케어그룹 멤버십으로 인가한다. `tts_clips` 스키마는 기존
+  Flyway 이력 호환을 위해 남아 있지만 런타임에서는 사용하지 않는다.
 - **Flyway**: 위 스키마는 `src/main/resources/db/migration`의 `V2__*.sql`부터 단계적으로 추가.

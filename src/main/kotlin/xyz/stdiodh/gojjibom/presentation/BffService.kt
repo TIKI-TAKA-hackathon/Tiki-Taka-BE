@@ -12,7 +12,7 @@ import xyz.stdiodh.gojjibom.shared.ApiException
 import java.time.LocalDate
 
 /**
- * Backend-for-frontend aggregate reads. Unauthenticated per SYNC-PLAN §4-7 (demo);
+ * Backend-for-frontend aggregate reads. Unauthenticated for the demo contract;
  * lazily generates the day's dose events (idempotent) before assembling the FE payload.
  */
 @Service

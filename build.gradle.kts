@@ -61,9 +61,8 @@ kotlin {
 }
 
 // Accept the structural findings that already exist in the app services
-// (large service classes carried over from earlier stages, and the intentionally
-// uniform DoseEventGenerator.ensureEventsFor(seniorId, date) signature). The
-// baseline keeps detekt strict for any newly introduced code.
+// (large service classes carried over from earlier stages). The baseline keeps
+// detekt strict for any newly introduced code.
 detekt {
     baseline = file("detekt-baseline.xml")
 }

@@ -89,8 +89,8 @@ class ImageService(
     /**
      * Demo-grade signed view URL for the unauthenticated BFF read endpoints
      * (/senior/today, /care-groups/{id}/board). No membership check by design
-     * (SYNC-PLAN §4-7); returns null when the image is missing so the BFF payload
-     * degrades gracefully. Harden alongside the BFF endpoints in S8.
+     * for the demo aggregate reads; returns null when the image is missing so the
+     * BFF payload degrades gracefully. Harden alongside the BFF endpoints.
      */
     fun viewUrlForImage(imageId: Long): String? {
         val image = images.findById(imageId).orElse(null) ?: return null

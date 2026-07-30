@@ -1,5 +1,8 @@
 # 002 — Prescriptions and dose schedules
 
+> 상태: **보관됨 · 구현 완료 후 후속 계약으로 확장됨**
+> 현재 처방·복약 일정 계약은 실행 중인 Swagger와 `src/main/kotlin/xyz/stdiodh/gojjibom/prescription/`을 기준으로 확인합니다.
+
 ## Goal
 Implement the prescription and dose schedule source data needed for the senior "today's
 medicine" screen and caregiver monitoring screens.
