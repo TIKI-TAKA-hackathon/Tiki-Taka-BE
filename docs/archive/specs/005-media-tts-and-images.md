@@ -1,5 +1,9 @@
 # 005 — Media TTS and images
 
+> 상태: **보관됨 · 이미지 기능만 유지, TTS 런타임 제거됨**
+> 이미지 presigned URL 흐름은 유지됩니다. Kokoro worker와 TTS API는 제거됐으며 안내 음성은 FE의
+> 정적 MP3로 제공됩니다. 현재 구현은 `src/main/kotlin/xyz/stdiodh/gojjibom/media/`를 기준으로 확인합니다.
+
 ## Goal
 Add Phase 5 media support: private image storage through presigned S3-compatible URLs
 and cached Korean TTS MP3 clips for medication information announcements.

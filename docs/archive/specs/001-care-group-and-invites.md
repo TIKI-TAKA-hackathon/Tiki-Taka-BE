@@ -1,5 +1,8 @@
 # 001 — Care groups and invite approval
 
+> 상태: **보관됨 · 구현 완료 후 후속 계약으로 확장됨**
+> 현재 케어그룹 계약은 실행 중인 Swagger와 `src/main/kotlin/xyz/stdiodh/gojjibom/caregroup/`을 기준으로 확인합니다.
+
 ## Goal
 Implement the first Phase 1 slice: create a care group for one senior, invite caregivers
 with a 24-hour invite link, and let the owner approve, reject, or remove members.

@@ -55,7 +55,7 @@
 
 ## 5. 도메인 모델
 
-[docs/ERD.md](ERD.md) 참조. Phase 1은 `USERS, CARE_GROUPS, CARE_GROUP_MEMBERS, INVITE_LINKS,
+[docs/ERD.md](../ERD.md) 참조. Phase 1은 `USERS, CARE_GROUPS, CARE_GROUP_MEMBERS, INVITE_LINKS,
 PHARMACIES, PRESCRIPTIONS, MEDICATIONS, DOSE_SCHEDULES, DOSE_SCHEDULE_ITEMS, DOSE_EVENTS`까지.
 `MEDICATION_INVENTORY, ESCALATION_*, NOTIFICATIONS`는 Phase 2~4, `TTS_CLIPS, IMAGES`는 Phase 5.
 
@@ -116,8 +116,8 @@ HTTP 동사 의미 준수, 페이지네이션. 문서화는 springdoc-openapi(Sw
 
 ## 10. 다음 단계 (작업 분해)
 
-1. `specs/001-care-group-and-invites.md` — 그룹/멤버/초대 링크 + 승인 플로우.
-2. `specs/002-prescriptions-and-dose-schedules.md` — 처방·약·봉지 스케줄 등록.
+1. [001-care-group-and-invites](./specs/001-care-group-and-invites.md) — 그룹/멤버/초대 링크 + 승인 플로우.
+2. [002-prescriptions-and-dose-schedules](./specs/002-prescriptions-and-dose-schedules.md) — 처방·약·봉지 스케줄 등록.
 3. `specs/003-daily-doses-and-confirmation.md` — 일일 dose_event + 버튼 확인 + 어드히어런스 조회.
 4. `specs/004-guardian-dashboard.md` — 대시보드·7일 요약 집계.
 5. 이후 Phase 2~4 스펙(알림/에스컬레이션/재고).
