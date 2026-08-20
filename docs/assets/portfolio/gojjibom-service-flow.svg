@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">고찌봄 복약 확인 흐름과 담당 범위</title>
+  <desc id="desc">처방 등록부터 어르신의 복약 확인, 사진 기록, 보호자 확인까지의 사용자 흐름과 4일 MVP에서 맡은 PM 및 개발 범위</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563EB" />
+    </marker>
+    <style>
+      text { font-family: Inter, Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif; }
+      .label { font-size: 16px; font-weight: 600; letter-spacing: 0.08em; fill: #2563EB; }
+      .title { font-size: 34px; font-weight: 700; fill: #0F172A; }
+      .body { font-size: 16px; font-weight: 400; fill: #475569; }
+      .step-no { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, monospace; font-size: 15px; font-weight: 700; fill: #2563EB; }
+      .step-title { font-size: 20px; font-weight: 700; fill: #0F172A; }
+      .step-copy { font-size: 15px; font-weight: 400; fill: #475569; }
+      .result { font-size: 21px; font-weight: 700; fill: #047857; }
+      .scope-title { font-size: 20px; font-weight: 700; fill: #0F172A; }
+      .scope-copy { font-size: 16px; font-weight: 500; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="675" fill="#FFFFFF" />
+  <text class="label" x="90" y="76">GOJJIBOM · 4-DAY MVP</text>
+  <text class="title" x="90" y="122">복약 확인을 안부로 이어 주는 한 번의 흐름</text>
+  <text class="body" x="90" y="154">어르신에게는 한 번의 행동으로, 보호자에게는 확인할 수 있는 기록으로 설계했습니다.</text>
+  <path d="M90 182 H1110" stroke="#E2E8F0" stroke-width="2" />
+
+  <path d="M262 302 C294 302 304 302 336 302" stroke="#2563EB" stroke-width="3" fill="none" marker-end="url(#arrow)" stroke-linecap="round" />
+  <path d="M502 302 C534 302 544 302 576 302" stroke="#2563EB" stroke-width="3" fill="none" marker-end="url(#arrow)" stroke-linecap="round" />
+  <path d="M742 302 C774 302 784 302 816 302" stroke="#2563EB" stroke-width="3" fill="none" marker-end="url(#arrow)" stroke-linecap="round" />
+
+  <g transform="translate(90 230)">
+    <path d="M0 0 H172 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">01</text>
+    <text class="step-title" x="16" y="64">처방 등록</text>
+    <text class="step-copy" x="16" y="96">약국 QR로</text>
+    <text class="step-copy" x="16" y="120">일정과 약 정보 연결</text>
+  </g>
+  <g transform="translate(330 230)">
+    <path d="M0 0 H172 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">02</text>
+    <text class="step-title" x="16" y="64">복약 알림</text>
+    <text class="step-copy" x="16" y="96">큰 버튼으로</text>
+    <text class="step-copy" x="16" y="120">먹을 약 확인</text>
+  </g>
+  <g transform="translate(570 230)">
+    <path d="M0 0 H172 V144 H0" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">03</text>
+    <text class="step-title" x="16" y="64">사진 기록</text>
+    <text class="step-copy" x="16" y="96">약 포지 사진과</text>
+    <text class="step-copy" x="16" y="120">복약 상태 저장</text>
+  </g>
+  <g transform="translate(810 230)">
+    <path d="M0 0 H300 V144 H0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" />
+    <text class="step-no" x="16" y="28">04</text>
+    <text class="step-title" x="16" y="64">보호자·복지사 확인</text>
+    <text class="step-copy" x="16" y="96">상태와 사진을 보고</text>
+    <text class="step-copy" x="16" y="120">확인 필요한 순간을 연결</text>
+  </g>
+
+  <circle cx="111" cy="430" r="8" fill="#10B981" />
+  <text class="result" x="132" y="438">확인 기록 생성 → 보호자 화면에서 상태·사진 확인</text>
+  <text class="body" x="90" y="475">사진을 복용의 절대 증거로 단정하지 않고, 미확인을 ‘확인 필요’ 상태로 다룹니다.</text>
+
+  <path d="M90 526 H1110" stroke="#E2E8F0" stroke-width="2" />
+  <path d="M90 560 V628" stroke="#2563EB" stroke-width="4" stroke-linecap="round" />
+  <text class="label" x="112" y="572">DELIVERY SCOPE</text>
+  <text class="scope-title" x="112" y="604">PM &amp; Development Lead · 5인 팀 · 4일 MVP</text>
+  <text class="scope-copy" x="112" y="632">제품 우선순위 · FE/BE 계약 · API/DB · 구현 조율 · 배포</text>
+</svg>

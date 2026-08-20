@@ -49,7 +49,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 ## 🏗️ 백엔드 역할
 
 <p align="center">
-  <img src="./docs/assets/gojjibom-flow.png" width="760" alt="고찌봄 서비스 플로우" />
+  <img src="./docs/assets/portfolio/gojjibom-service-flow.svg" width="900" alt="처방 등록부터 보호자 확인까지 이어지는 고찌봄 사용자 흐름과 4일 MVP 담당 범위" />
 </p>
 
 | 흐름 | 백엔드 책임 |
