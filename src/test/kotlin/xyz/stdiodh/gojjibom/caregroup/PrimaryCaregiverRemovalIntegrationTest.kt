@@ -13,6 +13,7 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -70,6 +71,16 @@ class PrimaryCaregiverRemovalIntegrationTest {
                 .filter { it.isPrimary }
                 .map { it.id }
         assertThat(primaryMemberIds).containsExactly(group.ownerMemberId)
+
+        mockMvc
+            .perform(
+                get("/api/v1/care-groups/${group.groupId}/change-log")
+                    .param("limit", "1"),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.data[0].targetType").value("MEMBER"))
+            .andExpect(jsonPath("$.data[0].field").value("is_primary"))
+            .andExpect(jsonPath("$.data[0].oldValue").value(familyMemberId.toString()))
+            .andExpect(jsonPath("$.data[0].newValue").value(group.ownerMemberId.toString()))
     }
 
     @Test
