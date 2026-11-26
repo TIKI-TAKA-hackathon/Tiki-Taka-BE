@@ -20,6 +20,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -288,6 +289,64 @@ class DoseIntegrationTest {
                 DOSE_DATE,
             )
         assertThat(count).isEqualTo(1L)
+    }
+
+    @Test
+    fun `dose list requires an existing senior with a care group`() {
+        val fixture = createFixture()
+        val suffix = sequence.incrementAndGet()
+        val seniorWithoutGroup = insertUser("SENIOR", "Lonely senior $suffix", "010-dose-l$suffix")
+
+        listOf(
+            Triple(UNKNOWN_ID, 404, "SENIOR_NOT_FOUND"),
+            Triple(fixture.ownerId, 400, "SENIOR_REQUIRED"),
+            Triple(seniorWithoutGroup, 400, "CARE_GROUP_REQUIRED"),
+        ).forEach { (seniorId, httpStatus, code) ->
+            mockMvc
+                .perform(
+                    get("/api/v1/seniors/$seniorId/doses")
+                        .param("date", DOSE_DATE.toString())
+                        .param("actorUserId", fixture.ownerId.toString()),
+                ).andExpect(status().`is`(httpStatus))
+                .andExpect(jsonPath("$.error.code").value(code))
+        }
+
+        val generated =
+            jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM dose_events WHERE senior_id IN (?, ?)",
+                Long::class.java,
+                fixture.ownerId,
+                seniorWithoutGroup,
+            )
+        assertThat(generated).isZero()
+    }
+
+    @Test
+    fun `unknown dose event returns 404 for get confirm and photo review`() {
+        val fixture = createFixture()
+
+        mockMvc
+            .perform(
+                get("/api/v1/dose-events/$UNKNOWN_ID")
+                    .param("actorUserId", fixture.ownerId.toString()),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("DOSE_EVENT_NOT_FOUND"))
+
+        mockMvc
+            .perform(
+                post("/api/v1/dose-events/$UNKNOWN_ID:confirm")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(confirmBody(fixture.ownerId, "BUTTON")),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("DOSE_EVENT_NOT_FOUND"))
+
+        mockMvc
+            .perform(
+                patch("/api/v1/dose-events/$UNKNOWN_ID/photo:review")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"actorUserId": ${fixture.ownerId}, "reviewStatus": "REVIEWED"}"""),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("DOSE_EVENT_NOT_FOUND"))
     }
 
     private fun listDoses(
@@ -623,3 +682,4 @@ private val SEOUL_ZONE: ZoneId = ZoneId.of("Asia/Seoul")
 private val DOSE_DATE: LocalDate = LocalDate.of(2026, 7, 2)
 private val FIXED_INSTANT: Instant = Instant.parse("2026-07-02T03:00:00Z")
 private val SCHEDULED_INSTANT: Instant = Instant.parse("2026-07-01T23:30:00Z")
+private const val UNKNOWN_ID = 999_999_999L
