@@ -23,7 +23,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🔗 링크
+## 링크
 
 | 구분 | 링크 |
 | --- | --- |
@@ -34,7 +34,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🧡 프로젝트 개요
+## 프로젝트 개요
 
 고찌봄은 **제주 지역 독거 어르신을 우선 대상으로 하는 복약 안부 서비스**입니다. 약국이 QR로
 복약 정보를 등록하면 어르신은 큰 버튼과 사진으로 확인 기록을 남기고, 보호자·복지사는 확인이
@@ -46,7 +46,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🏗️ 백엔드 역할
+## 백엔드 역할
 
 <p align="center">
   <img src="./docs/assets/portfolio/gojjibom-service-flow.svg" width="900" alt="처방 등록부터 보호자 확인까지 이어지는 고찌봄 사용자 흐름과 4일 MVP 담당 범위" />
@@ -61,7 +61,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🛠️ 기술 스택
+## 기술 스택
 
 | 영역 | 기술 |
 | --- | --- |
@@ -78,7 +78,7 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 ---
 
-## 🧩 아키텍처와 핵심 결정
+## 아키텍처와 핵심 결정
 
 ```mermaid
 graph TD
@@ -103,7 +103,7 @@ envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습�
 
 ---
 
-## 🗄️ 핵심 도메인
+## 핵심 도메인
 
 전체 테이블과 관계는 [ERD](./docs/ERD.md)에서 관리하며, README에는 주요 집합만 표시합니다.
 
@@ -117,7 +117,7 @@ envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습�
 
 ---
 
-## 🔌 API 계약
+## API 계약
 
 도메인 API(`/api/v1/**`)는 `{ "data": ..., "error": ... }` 공통 envelope를 사용합니다.
 전체 계약과 요청·응답 스키마는 실행 중인 서버의 [Swagger UI](http://localhost:8080/swagger-ui/index.html)에서
@@ -134,7 +134,7 @@ envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습�
 
 ---
 
-## 🚀 실행·검증·배포
+## 실행·검증·배포
 
 DB, CORS, 알림, S3와 presigned URL 설정은 `.env.example`을 기준으로 관리합니다.
 
@@ -160,7 +160,7 @@ PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검�
 
 ---
 
-## ⚠️ MVP 검증 경계
+## MVP 검증 경계
 
 <p align="center">
   <img src="./docs/assets/gojjibom-limitations.png" width="760" alt="고찌봄 한계와 보완 구상" />
@@ -177,7 +177,7 @@ PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검�
 
 ---
 
-## 🏁 기대 효과
+## 기대 효과
 
 <p align="center">
   <img src="./docs/assets/gojjibom-impact.png" width="760" alt="고찌봄 기대 효과" />
