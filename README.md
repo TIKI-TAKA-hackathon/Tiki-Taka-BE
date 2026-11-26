@@ -4,15 +4,7 @@
 
 ### 약 먹는 순간이, 곧 안부가 되는 복약 안부 API
 
-고찌봄 BE는 약국이 등록한 복약 정보를 바탕으로, 어르신의 복약 확인을 가족·복지사에게 연결하기 위한 백엔드 서버입니다.
-Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 도메인 모델을 구성합니다.
-
-<br />
-
 <img src="./docs/assets/gojjibom-cover.png" width="850" alt="고찌봄 BE 커버" />
-
-<br />
-<br />
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
@@ -21,28 +13,17 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 </div>
 
----
-
-## 링크
-
-| 구분 | 링크 |
-| --- | --- |
-| Frontend Repository | https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-FE |
-| Live Demo | https://gojjibom.web.app/ |
-| Swagger UI | `/swagger-ui/index.html` |
-| Health Check | `GET /api/health` |
-
----
-
 ## 프로젝트 개요
 
-고찌봄은 **제주 지역 독거 어르신을 우선 대상으로 하는 복약 안부 서비스**입니다. 약국이 QR로
-복약 정보를 등록하면 어르신은 큰 버튼과 사진으로 확인 기록을 남기고, 보호자·복지사는 확인이
-필요한 순간을 살펴봅니다.
+고찌봄은 **제주 지역 독거 어르신을 우선 대상으로 하는 복약 안부 서비스**입니다. 약국이 QR로 복약 정보를 등록하면 어르신은 큰 버튼과 사진으로 확인 기록을 남기고, 보호자·복지사는 확인이 필요한 순간을 살펴봅니다.
 
-5인 팀의 4일 MVP에서 **PM & Development Lead**로 제품 우선순위, FE/BE 계약, 백엔드
-아키텍처·DB/API·배포 인프라를 담당했습니다. 사용 경험과 시연 영상은
-[Frontend Repository](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-FE)에서 확인할 수 있습니다.
+| 항목 | 내용 |
+| --- | --- |
+| 팀·기간 | 5인 팀, 4일 MVP |
+| 역할 | **PM & Development Lead** — 제품 우선순위, FE/BE 계약, 백엔드 아키텍처·DB/API·배포 인프라 |
+| 결과 | Kotlin + Spring Boot API, PostgreSQL, 배포 파이프라인, TLS 구성 · 테스트 103 passed · JaCoCo gate LINE `0.95`, BRANCH `0.65` |
+| Live Demo | https://gojjibom.web.app/ |
+| Frontend | [Frontend Repository](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-FE) (사용 경험·시연 영상) |
 
 ---
 
@@ -54,10 +35,12 @@ Kotlin + Spring Boot 기반으로 API, PostgreSQL, 배포 파이프라인, TLS, 
 
 | 흐름 | 백엔드 책임 |
 | --- | --- |
-| 케어그룹 | 어르신, 보호자, 가족, 사회복지사를 하나의 그룹으로 연결합니다. |
-| 처방·복약 | 처방, 스케줄, 일자별 dose event와 사진 기반 확인 결과를 저장합니다. |
+| 케어그룹 | 어르신, 보호자, 가족, 사회복지사를 하나의 그룹으로 연결하고 역할과 초대 링크를 관리합니다. |
+| 처방·복약 | 약국이 등록한 처방·약 정보, 식사 기준 스케줄, 일자별 dose event와 사진 기반 확인 결과를 저장합니다. |
 | 보호자 조회 | 보호자 보드, 사진 갤러리와 확인 이력을 BFF로 제공합니다. |
-| 알림·미디어 | 미확인 상태를 기록하고 비공개 이미지용 presigned URL을 발급합니다. |
+| 알림·미디어 | 보호자 알림 설정과 미확인·발송 상태를 기록하고, 약 봉지 사진은 비공개 이미지용 presigned URL로 제공합니다. 주요 설정 변경 이력을 남깁니다. |
+
+전체 테이블과 관계는 [ERD](./docs/ERD.md)에 있습니다.
 
 ---
 
@@ -97,31 +80,13 @@ graph TD
 
 ### 4일 MVP의 FE/BE 계약 정렬
 
-이 일정에서 초기 16개 FE 라우트와 BE 계약의 간극을 분석해 BFF 집계 API 2개를 선택하고, `/api/v1`, 응답
-envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습니다. 자세한 판단과 구현 순서는
-[FE ↔ BE 싱크 계획서](./docs/archive/SYNC-PLAN.md)에 기록했습니다.
-
----
-
-## 핵심 도메인
-
-전체 테이블과 관계는 [ERD](./docs/ERD.md)에서 관리하며, README에는 주요 집합만 표시합니다.
-
-| 도메인 집합 | 책임 |
-| --- | --- |
-| 사용자·케어그룹 | 어르신과 보호자·복지사의 연결, 역할, 초대 링크를 관리합니다. |
-| 처방·약 | 약국이 등록한 처방과 개별 약 정보를 관리합니다. |
-| 스케줄·복약 이벤트 | 식사 기준 스케줄과 일자별 확인 상태를 관리합니다. |
-| 알림 | 보호자 설정, 확인 필요 알림과 발송 상태를 관리합니다. |
-| 미디어·변경 이력 | 약 봉지 사진 메타데이터와 주요 설정 변경을 기록합니다. |
+초기 16개 FE 라우트와 BE 계약의 간극을 분석해 BFF 집계 API 2개를 선택하고, `/api/v1`, 응답 envelope, enum·ID 규칙을 표준화하면서 데모 adapter를 유지했습니다. 판단과 구현 순서는 [FE ↔ BE 싱크 계획서](./docs/archive/SYNC-PLAN.md)에 있습니다.
 
 ---
 
 ## API 계약
 
-도메인 API(`/api/v1/**`)는 `{ "data": ..., "error": ... }` 공통 envelope를 사용합니다.
-전체 계약과 요청·응답 스키마는 실행 중인 서버의 [Swagger UI](http://localhost:8080/swagger-ui/index.html)에서
-확인할 수 있습니다.
+도메인 API(`/api/v1/**`)는 `{ "data": ..., "error": ... }` 공통 envelope를 사용합니다. 전체 계약과 스키마는 실행 중인 서버의 [Swagger UI](http://localhost:8080/swagger-ui/index.html)에 있습니다.
 
 | 흐름 | Method | 대표 Endpoint | 현재 상태 |
 | --- | --- | --- | --- |
@@ -154,9 +119,7 @@ curl http://localhost:8080/api/health
 - JaCoCo gate: LINE `0.95`, BRANCH `0.65`
 - 보고서: `build/reports/jacoco/test/html/index.html`
 
-PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검증합니다. `main` 검증이 끝난
-뒤에만 Docker 이미지를 GHCR에 게시하고 기존 EC2 배포를 실행합니다. 테스트 범위와 남은 위험은
-[테스트 및 커버리지 문서](./docs/TESTING.md)에 기록합니다.
+PR에서는 lint, 정적 분석, 테스트, JaCoCo report·gate와 build를 검증합니다. `main` 검증이 끝난 뒤에만 Docker 이미지를 GHCR에 게시하고 EC2 배포를 실행합니다. 테스트 범위와 남은 위험은 [테스트 및 커버리지 문서](./docs/TESTING.md)에 있습니다.
 
 ---
 
