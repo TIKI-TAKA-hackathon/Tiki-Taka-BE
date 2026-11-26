@@ -66,6 +66,27 @@ class CareGroupLookupIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("CARE_GROUP_NOT_FOUND"))
     }
 
+    @Test
+    fun `lookup by a caregiver phone without a care group of their own returns 404`() {
+        createCareGroup("lookup-owner", "010-lookup-owner-0001")
+
+        mockMvc
+            .perform(get("/api/v1/care-groups:lookup").param("seniorPhone", "010-lookup-owner-0002"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_NOT_FOUND"))
+    }
+
+    @Test
+    fun `lookup trims surrounding whitespace from the senior phone`() {
+        val seniorPhone = "010-lookup-trim-0001"
+        val created = createCareGroup("lookup-trim", seniorPhone)
+
+        mockMvc
+            .perform(get("/api/v1/care-groups:lookup").param("seniorPhone", "  $seniorPhone  "))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.data.careGroupId").value(created.path("id").asLong()))
+    }
+
     private fun createCareGroup(
         suffix: String,
         seniorPhone: String,
