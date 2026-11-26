@@ -18,9 +18,6 @@ build/
 certbot/conf/
 certbot/www/
 
-# review loop scratch
-.review/
-
 # local Claude/Codex workspace state
 .claude/settings.local.json
 .claude/worktrees/
