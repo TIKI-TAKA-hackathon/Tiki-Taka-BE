@@ -21,7 +21,7 @@
 | --- | --- |
 | 팀·기간 | 5인 팀, 4일 MVP |
 | 역할 | **PM & Development Lead** — 제품 우선순위, FE/BE 계약, 백엔드 아키텍처·DB/API·배포 인프라 |
-| 결과 | Kotlin + Spring Boot API, PostgreSQL, 배포 파이프라인, TLS 구성 · 테스트 103 passed · JaCoCo gate LINE `0.95`, BRANCH `0.65` |
+| 결과 | Kotlin + Spring Boot API, PostgreSQL, 배포 파이프라인, TLS 구성 · 테스트·커버리지 수치는 [테스트 품질 게이트](#테스트-품질-게이트) |
 | Live Demo | https://gojjibom.web.app/ |
 | Frontend | [Frontend Repository](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-FE) (사용 경험·시연 영상) |
 
@@ -113,9 +113,9 @@ curl http://localhost:8080/api/health
 
 ### 테스트 품질 게이트
 
-- 전체 테스트: 103 passed, 0 failed, 0 errors, 0 skipped
-- `src/main/kotlin` LINE: 2,243 / 2,336
-- `src/main/kotlin` BRANCH: 388 / 575
+- 전체 테스트: 159 passed, 0 failed, 0 errors, 0 skipped (2026-11-26 측정)
+- `src/main/kotlin` LINE: 2,330 / 2,363 (98.60%)
+- `src/main/kotlin` BRANCH: 504 / 587 (85.86%)
 - JaCoCo gate: LINE `0.95`, BRANCH `0.65`
 - 보고서: `build/reports/jacoco/test/html/index.html`
 
