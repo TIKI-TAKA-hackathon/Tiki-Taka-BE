@@ -26,7 +26,7 @@ class DoseService(
     private val clock: Clock,
 ) {
     @Transactional
-    fun listDoses(
+    fun listDosesEnsuringEvents(
         seniorId: Long,
         date: LocalDate,
         actorUserId: Long,
