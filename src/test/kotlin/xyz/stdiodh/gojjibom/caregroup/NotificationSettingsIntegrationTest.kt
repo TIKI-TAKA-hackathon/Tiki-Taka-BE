@@ -106,6 +106,19 @@ class NotificationSettingsIntegrationTest {
             .andExpect(jsonPath("$.data.maxRetries").value(4))
     }
 
+    @Test
+    fun `updating notification settings for a user without a care group returns 404`() {
+        val group = createCareGroup("notif-no-group")
+
+        mockMvc
+            .perform(
+                put("/api/v1/seniors/${group.ownerUserId}/notification-settings")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(settingsBody(group.ownerUserId)),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_NOT_FOUND"))
+    }
+
     private fun settingsBody(
         actorUserId: Long,
         enabled: Boolean = true,

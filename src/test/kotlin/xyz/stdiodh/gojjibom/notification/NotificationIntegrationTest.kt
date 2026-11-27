@@ -1,6 +1,8 @@
 package xyz.stdiodh.gojjibom.notification
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -26,6 +28,7 @@ import xyz.stdiodh.gojjibom.dose.DoseEventGenerator
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicLong
 
 @SpringBootTest
@@ -39,6 +42,8 @@ class NotificationIntegrationTest {
         private val postgres = PostgreSQLContainer<Nothing>("postgres:16-alpine")
 
         private val suffixSequence = AtomicLong()
+
+        private const val UNKNOWN_ID = 999_999_999L
 
         @JvmStatic
         @DynamicPropertySource
@@ -141,6 +146,64 @@ class NotificationIntegrationTest {
             .andExpect(jsonPath("$.data.alert.lastAlarm").value("오전 8:30"))
             .andExpect(jsonPath("$.data.alert.retries").value(2))
             .andExpect(jsonPath("$.data.alert.steps.length()").value(3))
+    }
+
+    @Test
+    fun `notification endpoints return 404 for unknown senior care group and notification`() {
+        val group = seededGroup()
+
+        mockMvc
+            .perform(
+                get("/api/v1/seniors/$UNKNOWN_ID/notifications")
+                    .param("actorUserId", group.ownerUserId.toString()),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_NOT_FOUND"))
+
+        mockMvc
+            .perform(get("/api/v1/care-groups/$UNKNOWN_ID/notifications"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("CARE_GROUP_NOT_FOUND"))
+
+        mockMvc
+            .perform(
+                patch("/api/v1/notifications/$UNKNOWN_ID:read")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"actorUserId": ${group.ownerUserId}}"""),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.error.code").value("NOTIFICATION_NOT_FOUND"))
+    }
+
+    @Test
+    fun `marking a notification read again keeps the first read time`() {
+        val group = seededGroup()
+        val notificationId = latestNotificationId(group)
+
+        val firstReadAt = markRead(notificationId, group.ownerUserId)
+        val secondReadAt = markRead(notificationId, group.ownerUserId)
+
+        // Compare instants: the re-read row is rendered with the JDBC offset, not the clock zone.
+        // PostgreSQL keeps microseconds (the driver rounds); the first in-memory value may carry nanos on Linux.
+        assertThat(OffsetDateTime.parse(secondReadAt).toInstant())
+            .isCloseTo(OffsetDateTime.parse(firstReadAt).toInstant(), within(1, ChronoUnit.MICROS))
+    }
+
+    private fun markRead(
+        notificationId: Long,
+        actorUserId: Long,
+    ): String {
+        val result =
+            mockMvc
+                .perform(
+                    patch("/api/v1/notifications/$notificationId:read")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"actorUserId": $actorUserId}"""),
+                ).andExpect(status().isOk)
+                .andReturn()
+        return objectMapper
+            .readTree(result.response.contentAsString)
+            .path("data")
+            .path("readAt")
+            .asText()
     }
 
     /** Group with a prescription, a generated dose event, and 3 notifications (MISSED + 2 escalations). */
