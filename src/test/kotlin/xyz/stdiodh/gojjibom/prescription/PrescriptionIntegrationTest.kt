@@ -19,9 +19,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import xyz.stdiodh.gojjibom.caregroup.UserEntity
-import xyz.stdiodh.gojjibom.caregroup.UserRepository
-import xyz.stdiodh.gojjibom.caregroup.UserType
+import xyz.stdiodh.gojjibom.caregroup.domain.UserEntity
+import xyz.stdiodh.gojjibom.caregroup.domain.UserRepository
+import xyz.stdiodh.gojjibom.caregroup.domain.UserType
 import java.util.concurrent.atomic.AtomicLong
 
 @SpringBootTest
