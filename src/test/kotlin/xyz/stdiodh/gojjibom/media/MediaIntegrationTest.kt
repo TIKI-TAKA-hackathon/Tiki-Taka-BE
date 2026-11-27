@@ -25,6 +25,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import xyz.stdiodh.gojjibom.media.application.ObjectStorage
+import xyz.stdiodh.gojjibom.media.application.PresignedObjectUrl
 import java.time.OffsetDateTime
 
 @SpringBootTest

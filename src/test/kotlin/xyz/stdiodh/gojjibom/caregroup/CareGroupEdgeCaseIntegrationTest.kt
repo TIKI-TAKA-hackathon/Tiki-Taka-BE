@@ -21,6 +21,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import xyz.stdiodh.gojjibom.caregroup.domain.CareGroupMemberRepository
+import xyz.stdiodh.gojjibom.caregroup.domain.CareGroupRole
+import xyz.stdiodh.gojjibom.caregroup.domain.MemberStatus
 
 @SpringBootTest
 @AutoConfigureMockMvc

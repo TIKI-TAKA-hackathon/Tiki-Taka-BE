@@ -21,10 +21,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import xyz.stdiodh.gojjibom.caregroup.UserEntity
-import xyz.stdiodh.gojjibom.caregroup.UserRepository
-import xyz.stdiodh.gojjibom.caregroup.UserType
-import xyz.stdiodh.gojjibom.dose.DoseEventGenerator
+import xyz.stdiodh.gojjibom.caregroup.domain.UserEntity
+import xyz.stdiodh.gojjibom.caregroup.domain.UserRepository
+import xyz.stdiodh.gojjibom.caregroup.domain.UserType
+import xyz.stdiodh.gojjibom.dose.application.DoseEventGenerator
+import xyz.stdiodh.gojjibom.notification.application.MissedDoseEvaluator
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset

@@ -1,4 +1,4 @@
-# Gojjibom System Architecture
+# 고찌봄 아키텍처
 
 ![시스템 아키텍처](./architecture.png)
 
@@ -17,13 +17,12 @@
 | --- | --- |
 | 분석일 | 2026-11-26 |
 | 저장소 | [TIKI-TAKA-hackathon/Tiki-Taka-BE](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE) |
-| 확인한 커밋 | `main` [`bb2823a`](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE/commit/bb2823a2c73ab72b15bda16382410ddba119ff56) |
+| 확인한 브랜치 | 분석일 시점 `main` |
 | 대상 환경 | `deploy.yml`이 배포하는 운영 구성 (저장소 설정 기준) |
+| 경로 변경 | 2026-11-27 패키지 정리로 코드 경로가 바뀌었습니다. 아래 근거 링크는 분석 시점 커밋 기준이고, 현재 경로는 [패키지 구조 정리](../docs/refactoring/2026-11-package-structure.md)에 있습니다. |
 | 운영 서버 | 직접 확인하지 않음 |
 
 ## 근거표
-
-`B` = `https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE/blob/bb2823a2c73ab72b15bda16382410ddba119ff56`
 
 | 도면의 구성요소·연결·경계 | 의미 | 근거 | 환경 | 확인 상태 |
 | --- | --- | --- | --- | --- |
@@ -40,15 +39,15 @@
 
 ## 로고 출처
 
-| 기술·제품 | 사용 파일 | 공식 출처 페이지 | 실제 다운로드 URL·패키지 내 경로 | 확인일 | 원본 SHA-256 |
-| --- | --- | --- | --- | --- | --- |
-| Amazon EC2 | `assets/logos/aws-ec2.svg` | https://aws.amazon.com/architecture/icons/ | https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip: Architecture-Service-Icons_07312026/Arch_Compute/64/Arch_Amazon-EC2_64.svg | 2026-11-26 | `5a7a0cef7a9f44ccdd544564ce9076abec3024090be0d6454504c49d149ce9ec` |
-| Firebase | `assets/logos/firebase.svg` | https://firebase.google.com/brand-guidelines | https://firebase.google.com/static/downloads/brand-guidelines/firebase-brand-assets.zip: firebase-brand-assets/Firebase Logo & Product Icons  2/Firebase Logo/Primary Logomark/SVG/Logomark_Full Color.svg | 2026-11-26 | `120799f51cff880e87bdc5c3954f1938ecc4cd401bec3fe188e1e22db641c556` |
-| NGINX (open source) | `assets/logos/nginx.svg` | https://nginx.org/ | https://nginx.org/img/nginx_logo.svg | 2026-11-26 | `9bd543826050ee506dd234f03fbbe972444bb20d9d4854ba7b0e1cf71ef28f07` |
-| Certbot (EFF) | `assets/logos/certbot.svg` | https://certbot.eff.org/ | https://certbot.eff.org/assets/Certbot-solid-c4e500f9953fc8ee1d38cb0b22778163602a82cb2b39a5bc89211315c5c877c9.svg | 2026-11-26 | `e636d2d8e663f880ee5a86a1f43a5f54734e649c65e95430e2e3c57614cb07d2` |
-| PostgreSQL | `assets/logos/postgresql.svg` | https://wiki.postgresql.org/wiki/Logo | https://wiki.postgresql.org/images/a/a4/PostgreSQL_logo.3colors.svg | 2026-11-26 | `51f93e19516081fc7d6fe6ab9bbab07abe5f7819e28016eefacea6dea691bc54` |
-| Amazon Simple Storage Service (S3) | `assets/logos/aws-s3.svg` | https://aws.amazon.com/architecture/icons/ | https://d1.awsstatic.com/onedam/marketing-channels/website/public/shared/architecture-icon-release/Icon-package_07312026.5846e92413caa21490223536cc97f1269e44fa92.zip: Architecture-Service-Icons_07312026/Arch_Storage/64/Arch_Amazon-Simple-Storage-Service_64.svg | 2026-11-26 | `b92c5101cc6565dd12df37655802279f8fba0c719279f62f93106d26750b36c6` |
-| GitHub (also for GHCR) | `assets/logos/github.svg` | https://brand.github.com/foundations/logo | https://brand.github.com/GitHub_Logos.zip: GitHub Logos/SVG/GitHub_Invertocat_Black.svg | 2026-11-26 | `693d7abe6f899646cc2e96856723b45e95f71885a54910b2749f6decdf7e1ee1` |
+| 기술·제품 | 사용 파일 | 공식 출처 | 확인일 |
+| --- | --- | --- | --- |
+| Amazon EC2 | `assets/logos/aws-ec2.svg` | [aws.amazon.com/architecture/icons](https://aws.amazon.com/architecture/icons/) | 2026-11-26 |
+| Firebase | `assets/logos/firebase.svg` | [firebase.google.com/brand-guidelines](https://firebase.google.com/brand-guidelines) | 2026-11-26 |
+| NGINX | `assets/logos/nginx.svg` | [nginx.org](https://nginx.org/) | 2026-11-26 |
+| Certbot | `assets/logos/certbot.svg` | [certbot.eff.org](https://certbot.eff.org/) | 2026-11-26 |
+| PostgreSQL | `assets/logos/postgresql.svg` | [wiki.postgresql.org/wiki/Logo](https://wiki.postgresql.org/wiki/Logo) | 2026-11-26 |
+| Amazon Simple Storage Service | `assets/logos/aws-s3.svg` | [aws.amazon.com/architecture/icons](https://aws.amazon.com/architecture/icons/) | 2026-11-26 |
+| GitHub | `assets/logos/github.svg` | [brand.github.com/foundations/logo](https://brand.github.com/foundations/logo) | 2026-11-26 |
 
 ## 확인 필요 사항
 
