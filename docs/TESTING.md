@@ -1,61 +1,29 @@
 # 테스트 및 커버리지
 
-## 측정 범위
+해커톤 직후 63개였던 테스트를 위험한 규칙 중심으로 159개까지 늘리고, CI가 커버리지 하락을 막도록 기준을 올렸습니다. 측정은 `src/main/kotlin` 전체 클래스를 제외 없이 대상으로 합니다.
 
-JaCoCo는 별도 class 제외 없이 기본 `main` source set 전체, 즉 `src/main/kotlin`에서 생성된 모든
-클래스를 측정한다. XML과 HTML 보고서를 모두 생성하며, 테스트가 끝나면 보고서 생성이 자동으로
-실행된다.
+## 이전과 현재
 
-작업 시작 시 저장소 HEAD는 `1e2d8bd`였고, 제시된 기준 커밋 `b89a13c`의 후손이었다.
-두 커밋 사이의 정리 변경을 보존한 상태에서 기준선을 다시 측정했으며, 제시된 covered/total과
-정확히 일치했다.
+| 항목 | 이전 (기준선) | 현재 (2026-11-27) |
+| --- | --- | --- |
+| 테스트 | 63 passed | 159 passed |
+| LINE | 2,096 / 2,323 (90.23%) | 2,330 / 2,363 (98.60%) |
+| BRANCH | 323 / 571 (56.57%) | 504 / 587 (85.86%) |
+| CI 커버리지 기준 | 처음 도입 때 LINE 0.90, BRANCH 0.56 | LINE 0.95, BRANCH 0.65 |
 
-## 기준선과 현재 결과
+수치는 Gradle JUnit XML과 `jacocoTestReport.xml`의 covered/total을 그대로 옮겼습니다. 커버리지 기준은 낮추지 않는 하한이고, 부족하면 테스트를 보강합니다. `check`가 `jacocoTestCoverageVerification`을 실행합니다.
 
-| 구분 | 테스트 | LINE | BRANCH |
-| --- | ---: | ---: | ---: |
-| 기준선 | 63 passed, 0 failed, 0 errors, 0 skipped | 2,096 / 2,323 | 323 / 571 |
-| 현재 | 103 passed, 0 failed, 0 errors, 0 skipped | 2,243 / 2,336 | 388 / 575 |
+## 확인한 방법
 
-수치는 Gradle JUnit XML과 `jacocoTestReport.xml`의 bundle counter에서 직접 집계한다. 백분율
-표기는 사용하지 않으며 covered/total을 원본 그대로 기록한다.
-
-## 품질 gate
-
-- LINE covered ratio: `0.95` 이상
-- BRANCH covered ratio: `0.65` 이상
-- `check`는 `jacocoTestCoverageVerification`에 의존한다.
-- 초기 gate `LINE 0.90`, `BRANCH 0.56`에서 현재 실측에 맞춰 보수적으로 상향했다.
-- 이 gate는 ratchet이다. 이후 변경에서 낮추지 않으며, 커버리지가 부족하면 회귀 위험을 검증하는
-  테스트를 보강한다.
-
-## 실행 명령
-
-기준 테스트:
-
-```bash
-./gradlew clean test --no-daemon
-```
-
-보고서와 gate:
-
-```bash
-./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
-```
-
-로컬 및 CI 최종 검증:
+로컬과 CI에서 같은 명령으로 lint, 정적 분석, 테스트, 커버리지 기준, build를 확인합니다.
 
 ```bash
 ./gradlew clean ktlintCheck detekt test jacocoTestReport jacocoTestCoverageVerification build --no-daemon
 ```
 
-보고서 위치:
+보고서는 `build/reports/jacoco/test/html/index.html`(HTML), `build/reports/jacoco/test/jacocoTestReport.xml`(XML), `build/test-results/test/`(JUnit XML)에 생깁니다.
 
-- XML: `build/reports/jacoco/test/jacocoTestReport.xml`
-- HTML: `build/reports/jacoco/test/html/index.html`
-- JUnit XML: `build/test-results/test/TEST-*.xml`
-
-## 검증하는 핵심 위험
+## 테스트가 지키는 규칙
 
 - 복약 이벤트의 지정일 생성, 반복 조회 멱등성, PostgreSQL unique 제약
 - ACTIVE 멤버만 가능한 목록·상세·확인과 첫 확인 정보 보존
@@ -67,11 +35,11 @@ JaCoCo는 별도 class 제외 없이 기본 `main` source set 전체, 즉 `src/m
 - 이미지 형식·크기·object key 경계와 S3 요청 메타데이터
 - BFF의 복약 상태 문구, 다음 복약, 주간 집계, 확인 시각의 Asia/Seoul 표현
 
-## 남은 미검증 위험
+## 남은 한계
 
-- 동시 최초 복약 조회에서 unique 충돌 후 같은 외부 트랜잭션이 정상 복구되는지는 검증하지 않았다.
-- 동시 복약 확인 두 건의 first-write 보장은 잠금이나 조건부 update가 없어 검증하지 않았다.
-- 초대 사용 횟수의 동시 수락과 이미지 object key의 동시 등록은 순차 계약만 검증했다.
-- 알림 sender 실패 후 재시도 정책은 없으며, 실패 시 성공 필드를 기록하지 않는 동작까지만 검증했다.
-- S3는 AWS SDK mock으로 요청을 검증했다. 실제 bucket, IAM, 네트워크 통합은 검증하지 않았다.
-- 현재 BFF aggregate의 데모용 비인증 읽기 계약은 그대로이며 운영 인증·감사 범위는 검증하지 않았다.
+- 동시 최초 복약 조회에서 unique 충돌 후 같은 외부 트랜잭션이 정상 복구되는지는 검증하지 않았습니다.
+- 동시 복약 확인 두 건의 first-write 보장은 잠금이나 조건부 update가 없어 검증하지 않았습니다.
+- 초대 사용 횟수의 동시 수락과 이미지 object key의 동시 등록은 순차 계약만 검증했습니다.
+- 알림 sender 실패 후 재시도 정책은 없고, 실패 시 성공 필드를 기록하지 않는 동작까지만 검증했습니다.
+- S3는 AWS SDK mock으로 요청을 검증했습니다. 실제 bucket, IAM, 네트워크 통합은 검증하지 않았습니다.
+- 현재 BFF aggregate의 데모용 비인증 읽기 계약은 그대로이며 운영 인증·감사 범위는 검증하지 않았습니다.

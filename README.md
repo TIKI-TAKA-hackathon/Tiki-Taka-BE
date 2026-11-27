@@ -240,4 +240,4 @@ DB, CORS, 알림, S3 설정은 `.env.example`을 기준으로 합니다.
 * [ERD](./docs/ERD.md)
 * [테스트와 커버리지](./docs/TESTING.md)
 * [패키지 구조 정리](./docs/refactoring/2026-11-package-structure.md)
-* [FE ↔ BE 계약 정렬 계획](./docs/archive/SYNC-PLAN.md)
+* [FE·BE 계약 정렬](./docs/FE_BE_CONTRACT.md)
