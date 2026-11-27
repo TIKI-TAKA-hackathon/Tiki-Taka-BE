@@ -19,6 +19,7 @@
 | 저장소 | [TIKI-TAKA-hackathon/Tiki-Taka-BE](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE) |
 | 확인한 커밋 | `main` [`bb2823a`](https://github.com/TIKI-TAKA-hackathon/Tiki-Taka-BE/commit/bb2823a2c73ab72b15bda16382410ddba119ff56) |
 | 대상 환경 | `deploy.yml`이 배포하는 운영 구성 (저장소 설정 기준) |
+| 경로 변경 | 2026-11-27 패키지 정리로 코드 경로가 바뀌었습니다. 아래 근거 링크는 분석 시점 커밋 기준이고, 현재 경로는 [패키지 구조 정리](../docs/refactoring/2026-11-package-structure.md)에 있습니다. |
 | 운영 서버 | 직접 확인하지 않음 |
 
 ## 근거표
