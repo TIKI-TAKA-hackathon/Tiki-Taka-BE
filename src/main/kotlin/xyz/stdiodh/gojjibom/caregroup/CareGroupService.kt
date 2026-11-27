@@ -142,6 +142,9 @@ class CareGroupService(
 
         CareGroupRules.updateFailure(member, request)?.let { throw it }
         CareGroupRules.applyUpdate(member, request, OffsetDateTime.now())
+        if (member.isPrimary && member.status == MemberStatus.REMOVED) {
+            handOverPrimaryToOwner(careGroupId, member, request.actorUserId)
+        }
 
         return mapper.toResponse(member)
     }
@@ -327,6 +330,36 @@ class CareGroupService(
         return changeLogs
             .findByCareGroupIdOrderByCreatedAtDesc(careGroupId, PageRequest.of(0, limit))
             .map { mapper.toResponse(it) }
+    }
+
+    // A removed member must not keep is_primary, or no ACTIVE member passes requirePrimary.
+    // The successor follows the V8 backfill rule: the earliest active OWNER. The actor of a
+    // removal is always an active OWNER and OWNER rows cannot be removed, so one exists.
+    private fun handOverPrimaryToOwner(
+        careGroupId: Long,
+        removed: CareGroupMemberEntity,
+        actorUserId: Long,
+    ) {
+        removed.isPrimary = false
+        members.saveAndFlush(removed)
+        val successor =
+            members
+                .findByCareGroupIdOrderByIdAsc(careGroupId)
+                .first { it.status == MemberStatus.ACTIVE && it.role == CareGroupRole.OWNER }
+        successor.isPrimary = true
+
+        changeLogs.save(
+            ChangeLogEntity(
+                careGroupId = careGroupId,
+                actorUserId = actorUserId,
+                targetType = ChangeTargetType.MEMBER,
+                targetId = successor.requiredId(),
+                field = "is_primary",
+                oldValue = removed.requiredId().toString(),
+                newValue = successor.requiredId().toString(),
+                createdAt = now(),
+            ),
+        )
     }
 
     private fun requirePrimary(
