@@ -110,7 +110,7 @@ class CareGroupService(
             inviteLinks.findByToken(token)
                 ?: throw CareGroupErrors.notFound("INVITE_NOT_FOUND", "Invite link not found")
 
-        CareGroupRules.inviteAcceptanceFailure(invite, request.role, OffsetDateTime.now())?.let { throw it }
+        CareGroupRules.inviteAcceptanceFailure(invite, request.role, now())?.let { throw it }
 
         val caregiver =
             findOrCreateUser(
@@ -141,7 +141,7 @@ class CareGroupService(
                 ?: throw CareGroupErrors.notFound("MEMBER_NOT_FOUND", "Care group member not found")
 
         CareGroupRules.updateFailure(member, request)?.let { throw it }
-        CareGroupRules.applyUpdate(member, request, OffsetDateTime.now())
+        CareGroupRules.applyUpdate(member, request, now())
         if (member.isPrimary && member.status == MemberStatus.REMOVED) {
             handOverPrimaryToOwner(careGroupId, member, request.actorUserId)
         }

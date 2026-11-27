@@ -25,7 +25,7 @@ class BffService(
     private val photoGalleryAssembler: PhotoGalleryAssembler,
 ) {
     @Transactional
-    fun seniorToday(
+    fun seniorTodayEnsuringEvents(
         seniorId: Long,
         date: LocalDate,
     ): SeniorDay {
@@ -35,7 +35,7 @@ class BffService(
     }
 
     @Transactional
-    fun caregiverBoard(
+    fun caregiverBoardEnsuringEvents(
         careGroupId: Long,
         date: LocalDate,
     ): CaregiverBoard {

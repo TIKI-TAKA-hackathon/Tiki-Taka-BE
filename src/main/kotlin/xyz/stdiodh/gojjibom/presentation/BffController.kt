@@ -28,7 +28,7 @@ class BffController(
         date: LocalDate?,
     ): ApiResponse<SeniorDay> {
         val resolvedDate = date ?: LocalDate.now(clock)
-        return ApiResponse.success(bffService.seniorToday(seniorId, resolvedDate))
+        return ApiResponse.success(bffService.seniorTodayEnsuringEvents(seniorId, resolvedDate))
     }
 
     @GetMapping("/care-groups/{id}/board")
@@ -39,7 +39,7 @@ class BffController(
         date: LocalDate?,
     ): ApiResponse<CaregiverBoard> {
         val resolvedDate = date ?: LocalDate.now(clock)
-        return ApiResponse.success(bffService.caregiverBoard(id, resolvedDate))
+        return ApiResponse.success(bffService.caregiverBoardEnsuringEvents(id, resolvedDate))
     }
 
     @GetMapping("/care-groups/{id}/photos")

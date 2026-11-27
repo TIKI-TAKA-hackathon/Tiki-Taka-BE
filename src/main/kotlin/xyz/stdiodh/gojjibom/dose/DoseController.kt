@@ -29,7 +29,7 @@ class DoseController(
         @RequestParam actorUserId: Long,
     ): ApiResponse<DoseEventListResponse> {
         val resolvedDate = date ?: LocalDate.now(clock)
-        return ApiResponse.success(doseService.listDoses(seniorId, resolvedDate, actorUserId))
+        return ApiResponse.success(doseService.listDosesEnsuringEvents(seniorId, resolvedDate, actorUserId))
     }
 
     @GetMapping("/dose-events/{id}")
