@@ -2,6 +2,7 @@ package xyz.stdiodh.gojjibom.notification
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -27,6 +28,7 @@ import xyz.stdiodh.gojjibom.dose.DoseEventGenerator
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.atomic.AtomicLong
 
 @SpringBootTest
@@ -180,8 +182,9 @@ class NotificationIntegrationTest {
         val secondReadAt = markRead(notificationId, group.ownerUserId)
 
         // Compare instants: the re-read row is rendered with the JDBC offset, not the clock zone.
+        // PostgreSQL keeps microseconds (the driver rounds); the first in-memory value may carry nanos on Linux.
         assertThat(OffsetDateTime.parse(secondReadAt).toInstant())
-            .isEqualTo(OffsetDateTime.parse(firstReadAt).toInstant())
+            .isCloseTo(OffsetDateTime.parse(firstReadAt).toInstant(), within(1, ChronoUnit.MICROS))
     }
 
     private fun markRead(
