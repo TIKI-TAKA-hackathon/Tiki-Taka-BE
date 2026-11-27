@@ -99,17 +99,3 @@ The `certbot` container then renews every 12h automatically.
 curl https://api.stdiodh.xyz/api/health
 # expected: {"status":"UP","service":"gojjibom-api","time":"..."}
 ```
-
-## Running the review loop
-
-`loop.sh` drives implement → gates → adversarial review until the reviewer emits `<<<PASS>>>`
-(or the max iterations is hit). It requires the `claude` and `codex` CLIs on `PATH`.
-
-```bash
-./loop.sh specs/<task>.md [max_iters]   # max_iters defaults to 5
-```
-
-Each iteration: Claude implements the spec, the gates run
-(`./gradlew ktlintCheck detekt test build`), and — if gates pass — Codex reviews the diff
-read-only against `prompts/reviewer.md` + the checklist in `AGENTS.md`. Write new tasks as
-`specs/NNN-*.md` from `specs/_template.md`.

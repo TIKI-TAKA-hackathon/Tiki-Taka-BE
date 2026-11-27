@@ -7,7 +7,7 @@ plugins {
     id("org.springframework.boot") version "4.1.0"
     jacoco
 
-    // Review-loop gates: `./gradlew ktlintCheck detekt`.
+    // Static analysis gates: `./gradlew ktlintCheck detekt`.
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
     // detekt 2.x is published under the `dev.detekt` plugin id. The legacy
     // `io.gitlab.arturbosch.detekt` id only ships 1.23.x, which does not support
